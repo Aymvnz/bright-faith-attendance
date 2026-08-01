@@ -61,7 +61,7 @@ export async function writeAttendanceToTab(
     bySlug.set(slugifyName(e.name), { label, name: e.name });
   }
 
-  const data: { range: string; values: string[][] }[] = [];
+  const updates: { range: string; values: string[][] }[] = [];
   const seen = new Set<string>();
   let matched = 0;
 
@@ -75,27 +75,37 @@ export async function writeAttendanceToTab(
     matched += 1;
     const current = (row?.[1] ?? "").toString().trim();
     if (current === entry.label) return;
-    data.push({ range: `${quoted}!B${i + 1}`, values: [[entry.label]] });
+    updates.push({ range: `${quoted}!B${i + 1}`, values: [[entry.label]] });
   });
 
-  // Anyone with a status today but no existing row in this tab is a student
-  // who was added to the roster after this tab was created — append a new
-  // row for them instead of silently skipping them.
-  let nextRow = rows.length + 1;
-  let appended = 0;
-  for (const [slug, entry] of bySlug) {
-    if (seen.has(slug)) continue;
-    data.push({ range: `${quoted}!A${nextRow}:B${nextRow}`, values: [[entry.name, entry.label]] });
-    nextRow += 1;
-    appended += 1;
-  }
-
-  if (data.length) {
+  if (updates.length) {
     await call(`/${spreadsheetId}/values:batchUpdate`, {
       method: "POST",
-      body: JSON.stringify({ valueInputOption: "USER_ENTERED", data }),
+      body: JSON.stringify({ valueInputOption: "USER_ENTERED", data: updates }),
     });
   }
 
-  return { matched, updated: data.length, appended };
+  // Anyone with a status today but no existing row in this tab is a student
+  // who was added to the roster after this tab was created. Use the Sheets
+  // "append" operation (with INSERT_ROWS) rather than writing to a fixed
+  // A{row}:B{row} range — a fixed range beyond the tab's current row count
+  // fails with a 400 ("exceeds grid limits"), while append grows the sheet
+  // automatically.
+  const toAppend: string[][] = [];
+  for (const [slug, entry] of bySlug) {
+    if (seen.has(slug)) continue;
+    toAppend.push([entry.name, entry.label]);
+  }
+
+  if (toAppend.length) {
+    await call(
+      `/${spreadsheetId}/values/${encodeRange(`${quoted}!A:B`)}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,
+      {
+        method: "POST",
+        body: JSON.stringify({ values: toAppend }),
+      },
+    );
+  }
+
+  return { matched, updated: updates.length, appended: toAppend.length };
 }
