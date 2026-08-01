@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as QrCodesRouteImport } from './routes/qr-codes'
+import { Route as ApiCronMarkAbsentRouteImport } from './routes/api/cron/mark-absent'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -22,31 +23,40 @@ const QrCodesRoute = QrCodesRouteImport.update({
   path: '/qr-codes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCronMarkAbsentRoute = ApiCronMarkAbsentRouteImport.update({
+  id: '/api/cron/mark-absent',
+  path: '/api/cron/mark-absent',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/qr-codes': typeof QrCodesRoute
+  '/api/cron/mark-absent': typeof ApiCronMarkAbsentRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/qr-codes': typeof QrCodesRoute
+  '/api/cron/mark-absent': typeof ApiCronMarkAbsentRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/qr-codes': typeof QrCodesRoute
+  '/api/cron/mark-absent': typeof ApiCronMarkAbsentRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/qr-codes'
+  fullPaths: '/' | '/qr-codes' | '/api/cron/mark-absent'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/qr-codes'
-  id: '__root__' | '/' | '/qr-codes'
+  to: '/' | '/qr-codes' | '/api/cron/mark-absent'
+  id: '__root__' | '/' | '/qr-codes' | '/api/cron/mark-absent'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   QrCodesRoute: typeof QrCodesRoute
+  ApiCronMarkAbsentRoute: typeof ApiCronMarkAbsentRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -65,12 +75,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof QrCodesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/cron/mark-absent': {
+      id: '/api/cron/mark-absent'
+      path: '/api/cron/mark-absent'
+      fullPath: '/api/cron/mark-absent'
+      preLoaderRoute: typeof ApiCronMarkAbsentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   QrCodesRoute: QrCodesRoute,
+  ApiCronMarkAbsentRoute: ApiCronMarkAbsentRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
