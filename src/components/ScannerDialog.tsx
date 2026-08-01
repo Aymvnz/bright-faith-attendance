@@ -24,6 +24,7 @@ export function ScannerDialog({ open, onOpenChange, onScan }: Props) {
         const reader = new BrowserMultiFormatReader();
         const result = await reader.decodeFromVideoDevice(
           undefined,
+          videoRef.current ?? undefined,
           (res) => {
             if (!res || stopped) return;
 
@@ -31,12 +32,10 @@ export function ScannerDialog({ open, onOpenChange, onScan }: Props) {
             const now = Date.now();
             const lastScan = lastScanRef.current;
 
-            // Prevent the same QR code being read repeatedly while it remains in view.
             if (lastScan?.text === text && now - lastScan.time < 2000) return;
 
             lastScanRef.current = { text, time: now };
             onScan(text);
-          },
           },
         );
         controls = result;
