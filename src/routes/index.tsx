@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { ScannerDialog } from "@/components/ScannerDialog";
 import { SettingsDialog, type ProgramSettings } from "@/components/SettingsDialog";
 
@@ -42,6 +43,17 @@ export const Route = createFileRoute("/")({
 });
 
 const todayKey = () => new Date().toLocaleDateString("en-CA");
+
+function gradeSortKey(label: string): number {
+  const s = label.trim().toLowerCase();
+  if (!s) return 9999; // ungrouped last
+  if (s.startsWith("pre-k") || s === "pk" || s.startsWith("pre k")) return -2;
+  if (s === "k" || s.startsWith("kinder")) return -1;
+  const match = s.match(/\d+/);
+  if (match) return Number(match[0]);
+  return 500; // non-numeric, non-K/PK labels sort after numbered grades
+}
+
 function LiveClock() {
   const [now, setNow] = useState(new Date());
   useEffect(() => {
@@ -50,6 +62,7 @@ function LiveClock() {
   }, []);
   return <span>{now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", second: "2-digit" })}</span>;
 }
+
 type AttendanceRow = {
   id: string;
   student_id: string;
@@ -77,8 +90,8 @@ function SignIn() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-secondary px-4">
-      <Card className="w-full max-w-md shadow-[var(--shadow-card)]">
+    <main className="login-background flex min-h-screen items-center justify-center px-4">
+      <Card className="relative z-10 w-full max-w-md shadow-[var(--shadow-raised)]">
         <CardHeader className="items-center text-center">
           <div className="mb-2 flex size-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
             <QrCode className="size-7" />
@@ -218,7 +231,6 @@ function Home() {
         return;
       }
       const status = statusFor(settingsQuery.data?.tardy_after?.slice(0, 5) ?? "10:30");
-      setScannerOpen(false);
       void mark(student.id, student.name, status);
     },
     [students, settingsQuery.data, mark],
@@ -232,12 +244,26 @@ function Home() {
   const filtered = students.filter((s) =>
     (s.name + s.id + s.group).toLowerCase().includes(search.toLowerCase()),
   );
+  const grouped = (() => {
+    const map = new Map<string, typeof filtered>();
+    for (const student of filtered) {
+      const key = student.group?.trim() || "Ungrouped";
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(student);
+    }
+    return Array.from(map.entries())
+      .map(([group, groupStudents]) => ({
+        group,
+        students: [...groupStudents].sort((a, b) => a.name.localeCompare(b.name)),
+      }))
+      .sort((a, b) => gradeSortKey(a.group) - gradeSortKey(b.group) || a.group.localeCompare(b.group));
+  })();
   const presentCount = [...attendance.values()].filter((a) => a.status === "present").length;
   const tardyCount = [...attendance.values()].filter((a) => a.status === "tardy").length;
 
   return (
-    <div className="min-h-screen bg-secondary">
-      <header className="bg-primary text-primary-foreground">
+    <div className="min-h-screen bg-background">
+      <header className="relative z-10 bg-primary text-primary-foreground shadow-[var(--shadow-raised)]">
         <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-3 px-4 py-4 sm:grid-cols-3">
           <div className="flex items-center gap-2 font-semibold">
             <QrCode className="size-5" />
@@ -262,7 +288,7 @@ function Home() {
 
       <main className="mx-auto max-w-6xl space-y-6 px-4 py-8">
         <div className="grid gap-4 sm:grid-cols-3">
-          <Card className="shadow-[var(--shadow-card)]">
+          <Card className="shadow-[var(--shadow-raised)]">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Roster</CardTitle>
             </CardHeader>
@@ -278,7 +304,7 @@ function Home() {
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Tardy today</CardTitle>
             </CardHeader>
-            <CardContent className="text-3xl font-semibold text-accent">{tardyCount}</CardContent>
+            <CardContent className="text-3xl font-semibold text-warning">{tardyCount}</CardContent>
           </Card>
         </div>
 
@@ -306,7 +332,7 @@ function Home() {
                 {exportDate ? format(exportDate, "MMM d, yyyy") : "Export by date"}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
+            <PopoverContent className="w-auto overflow-hidden rounded-xl p-0 shadow-[var(--shadow-raised)]" align="start">
               <Calendar
                 mode="single"
                 selected={exportDate}
@@ -341,77 +367,107 @@ function Home() {
           </p>
         )}
 
-        <Card className="overflow-hidden shadow-[var(--shadow-card)]">
-          <table className="w-full text-sm">
-            <thead className="bg-muted text-left text-muted-foreground">
-              <tr>
-                <th className="px-4 py-3 font-medium">Student</th>
-                <th className="px-4 py-3 font-medium">Class</th>
-                <th className="px-4 py-3 font-medium">Today</th>
-                <th className="px-4 py-3 text-right font-medium">Mark</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rosterQuery.isPending && (
-                <tr>
-                  <td className="px-4 py-6 text-muted-foreground" colSpan={4}>
-                    Loading roster…
-                  </td>
-                </tr>
-              )}
-              {filtered.map((student) => {
-                const record = attendance.get(student.id);
-                return (
-                  <tr key={student.id} className="border-t">
-                    <td className="px-4 py-3">
-                      <div className="font-medium">{student.name}</div>
-                      <div className="text-xs text-muted-foreground">{student.id}</div>
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">{student.group || "—"}</td>
-                    <td className="px-4 py-3">
-                      {record ? (
-                        <Badge variant={record.status === "tardy" ? "destructive" : "default"}>
-                          {record.status}
-                          <span className="ml-1 opacity-80">
-                            {new Date(record.scanned_at).toLocaleTimeString([], {
-                              hour: "numeric",
-                              minute: "2-digit",
-                            })}
-                          </span>
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline">not scanned</Badge>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="inline-flex gap-2">
-                       <Button size="sm" variant="outline" onClick={() => mark(student.id, student.name, "present")}>
-                          Present
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => mark(student.id, student.name, "tardy")}>
-                          Tardy
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => mark(student.id, student.name, "absent")}>
-                          Absent
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => mark(student.id, student.name, "excused")}>
-                          Excused
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-              {!rosterQuery.isPending && filtered.length === 0 && (
-                <tr>
-                  <td className="px-4 py-6 text-muted-foreground" colSpan={4}>
-                    No students to show.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </Card>
+        {rosterQuery.isPending && (
+          <p className="rounded-lg border bg-card p-6 text-center text-sm text-muted-foreground">
+            Loading roster…
+          </p>
+        )}
+
+        {!rosterQuery.isPending && grouped.length > 0 && (
+          <Accordion type="multiple" defaultValue={grouped.map((g) => g.group)} className="space-y-3">
+            {grouped.map(({ group, students: groupStudents }) => (
+              <AccordionItem
+                key={group}
+                value={group}
+                className="overflow-hidden rounded-lg border bg-card shadow-[var(--shadow-card)]"
+              >
+                <AccordionTrigger className="px-4 hover:no-underline">
+                  <div className="flex items-baseline gap-2">
+                    <span className="font-medium">{group}</span>
+                    <span className="text-sm text-muted-foreground">({groupStudents.length})</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-0 pb-0">
+                  <table className="w-full table-fixed text-sm">
+                    <colgroup>
+                      <col className="w-[35%]" />
+                      <col className="w-[20%]" />
+                      <col className="w-[45%]" />
+                     </colgroup>
+                    <thead className="bg-muted text-left text-muted-foreground">
+                      <tr>
+                        <th className="px-4 py-3 font-medium">Student</th>
+                        <th className="px-4 py-3 font-medium">Today</th>
+                        <th className="px-4 py-3 text-right font-medium">Mark</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {groupStudents.map((student) => {
+                        const record = attendance.get(student.id);
+                        return (
+                          <tr key={student.id} className="border-t">
+                            <td className="px-4 py-3">
+                              <div className="font-medium">{student.name}</div>
+                              <div className="text-xs text-muted-foreground">{student.id}</div>
+                            </td>
+                            <td className="px-4 py-3">
+                              {record ? (
+                                <Badge
+                                  variant="outline"
+                                  className={
+                                      record.status === "present"
+                                        ? "border-transparent bg-primary text-primary-foreground shadow"
+                                        : record.status === "absent"
+                                          ? "border-transparent bg-warning text-warning-foreground shadow"
+                                          : record.status === "tardy"
+                                            ? "border-transparent bg-secondary text-secondary-foreground shadow"
+                                            : "border-transparent bg-sky-100 text-primary shadow"
+                                    }
+>
+                                  {record.status}
+                                  <span className="ml-1 opacity-80">
+                                    {new Date(record.scanned_at).toLocaleTimeString([], {
+                                      hour: "numeric",
+                                      minute: "2-digit",
+                                    })}
+                                  </span>
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline">not scanned</Badge>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <div className="inline-flex gap-2">
+                                <Button size="sm" variant="outline" onClick={() => mark(student.id, student.name, "present")}>
+                                  Present
+                                </Button>
+                                <Button size="sm" variant="outline" onClick={() => mark(student.id, student.name, "tardy")}>
+                                  Tardy
+                                </Button>
+                                <Button size="sm" variant="outline" onClick={() => mark(student.id, student.name, "absent")}>
+                                  Absent
+                                </Button>
+                                <Button size="sm" variant="outline" onClick={() => mark(student.id, student.name, "excused")}>
+                                  Excused
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        )}
+
+        {!rosterQuery.isPending && grouped.length === 0 && (
+          <p className="rounded-lg border bg-card p-6 text-center text-sm text-muted-foreground">
+            No students to show.
+          </p>
+        )}
       </main>
 
       <ScannerDialog open={scannerOpen} onOpenChange={setScannerOpen} onScan={handleScan} />

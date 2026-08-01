@@ -11,6 +11,7 @@ type Props = {
 export function ScannerDialog({ open, onOpenChange, onScan }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [error, setError] = useState<string | null>(null);
+  const lastScanRef = useRef<{ text: string; time: number } | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -23,16 +24,22 @@ export function ScannerDialog({ open, onOpenChange, onScan }: Props) {
         const reader = new BrowserMultiFormatReader();
         const result = await reader.decodeFromVideoDevice(
           undefined,
-          videoRef.current ?? undefined,
           (res) => {
-            if (res && !stopped) {
-              stopped = true;
-              onScan(res.getText());
-            }
+            if (!res || stopped) return;
+
+            const text = res.getText();
+            const now = Date.now();
+            const lastScan = lastScanRef.current;
+
+            // Prevent the same QR code being read repeatedly while it remains in view.
+            if (lastScan?.text === text && now - lastScan.time < 2000) return;
+
+            lastScanRef.current = { text, time: now };
+            onScan(text);
+          },
           },
         );
         controls = result;
-        if (stopped) result.stop();
       } catch (e) {
         setError(
           e instanceof Error ? e.message : "Could not start the camera. Allow camera access and try again.",
