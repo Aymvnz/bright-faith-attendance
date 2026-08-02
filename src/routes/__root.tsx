@@ -107,7 +107,7 @@ function RootShell({ children }: { children: ReactNode }) {
       <head>
         <HeadContent />
       </head>
-      <body>
+      <body className="pb-10">
         {children}
         <Scripts />
       </body>
@@ -122,7 +122,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
-      <footer className="border-t bg-secondary px-4 py-4 text-center text-xs text-muted-foreground">
+      <footer className="fixed inset-x-0 bottom-0 z-40 border-t bg-secondary px-4 py-2 text-center text-xs text-muted-foreground">
         This program was created specifically for use by Chicago DT REC. All rights belong to Ayman
         Karamali.{" "}
         <a href="mailto:aymankaramali@gmail.com" className="underline underline-offset-2 hover:text-foreground">
