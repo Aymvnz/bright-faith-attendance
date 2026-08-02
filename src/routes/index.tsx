@@ -377,7 +377,7 @@ function Home() {
         )}
 
         {!rosterQuery.isPending && grouped.length > 0 && (
-          <Accordion type="multiple" defaultValue={grouped.map((g) => g.group)} className="space-y-3">
+          <Accordion type="multiple" className="space-y-3">
             {grouped.map(({ group, students: groupStudents }) => (
               <AccordionItem
                 key={group}
