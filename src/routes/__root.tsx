@@ -122,6 +122,13 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
+      <footer className="border-t bg-secondary px-4 py-4 text-center text-xs text-muted-foreground">
+        This program was created specifically for use by Chicago DT REC. All rights belong to Ayman
+        Karamali.{" "}
+        <a href="mailto:aymankaramali@gmail.com" className="underline underline-offset-2 hover:text-foreground">
+          aymankaramali@gmail.com
+        </a>
+      </footer>
       <Toaster richColors position="top-center" />
     </QueryClientProvider>
   );
