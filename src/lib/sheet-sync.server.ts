@@ -41,7 +41,49 @@ const LABEL: Record<string, string> = {
   absent: "A",
   excused: "E",
 };
+export async function duplicateMostRecentTabForDate(spreadsheetId: string, newTabTitle: string) {
+  const meta = await call(`/${spreadsheetId}?fields=sheets.properties(sheetId,title,index)`);
+  const sheets: { sheetId: number; title: string; index: number }[] = (meta.sheets ?? []).map(
+    (s: any) => s.properties,
+  );
 
+  if (sheets.some((s) => s.title === newTabTitle)) {
+    return { created: false, reason: "already-exists" as const };
+  }
+
+  const dated = sheets.filter((s) => parseTabDate(s.title));
+  if (!dated.length) {
+    return { created: false, reason: "no-source-tab" as const };
+  }
+  // The most recently created dated tab = whichever sits furthest right.
+  const source = dated.reduce((a, b) => (b.index > a.index ? b : a));
+
+  const dup = await call(`/${spreadsheetId}:batchUpdate`, {
+    method: "POST",
+    body: JSON.stringify({
+      requests: [
+        {
+          duplicateSheet: {
+            sourceSheetId: source.sheetId,
+            insertSheetIndex: source.index + 1,
+            newSheetName: newTabTitle,
+          },
+        },
+      ],
+    }),
+  });
+
+  // Clear the status column (B) in the new tab so it's a blank slate —
+  // names/roster/formatting/dropdowns carry over, attendance status resets.
+  const quoted = `'${newTabTitle.replace(/'/g, "''")}'`;
+  await call(`/${spreadsheetId}/values/${encodeRange(`${quoted}!B1:B500`)}:clear`, {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
+
+  const newSheetId = dup.replies?.[0]?.duplicateSheet?.properties?.sheetId;
+  return { created: true, sourceTab: source.title, newTab: newTabTitle, newSheetId };
+}
 export type AttendanceEntry = { name: string; status: string };
 
 export async function writeAttendanceToTab(

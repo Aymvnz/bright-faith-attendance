@@ -2,6 +2,8 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "crons": [
     { "path": "/api/cron/mark-absent", "schedule": "0 16 * * *" },
-    { "path": "/api/cron/mark-absent", "schedule": "0 17 * * *" }
+    { "path": "/api/cron/mark-absent", "schedule": "0 17 * * *" },
+    { "path": "/api/cron/create-weekly-tab", "schedule": "0 4 * * 6" },
+    { "path": "/api/cron/create-weekly-tab", "schedule": "0 5 * * 6" }
   ]
 }
