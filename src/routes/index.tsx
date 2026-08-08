@@ -18,6 +18,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { ScannerDialog } from "@/components/ScannerDialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { SettingsDialog, type ProgramSettings } from "@/components/SettingsDialog";
 
 
@@ -128,6 +129,9 @@ function Home() {
   const rosterFn = useServerFn(getRoster);
   const syncSheetFn = useServerFn(syncAttendanceToSheet);
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [pendingScan, setPendingScan] = useState<{ id: string; name: string; status: string } | null>(
+    null,
+  );
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [exportDate, setExportDate] = useState<Date | undefined>();
@@ -225,6 +229,7 @@ function Home() {
 
   const handleScan = useCallback(
     (text: string) => {
+      if (pendingScan) return; // a confirmation is already open — ignore new scans until resolved
       const code = text.trim();
       const student =
         students.find((s) => s.id.toLowerCase() === code.toLowerCase()) ??
@@ -234,10 +239,16 @@ function Home() {
         return;
       }
       const status = statusFor(settingsQuery.data?.tardy_after?.slice(0, 5) ?? "10:30");
-      void mark(student.id, student.name, status);
+      setPendingScan({ id: student.id, name: student.name, status });
     },
-    [students, settingsQuery.data, mark],
+    [students, settingsQuery.data, pendingScan],
   );
+
+  const confirmPendingScan = useCallback(() => {
+    if (!pendingScan) return;
+    void mark(pendingScan.id, pendingScan.name, pendingScan.status);
+    setPendingScan(null);
+  }, [pendingScan, mark]);
 
   if (loading) {
     return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Loading…</div>;
@@ -474,6 +485,19 @@ function Home() {
       </main>
 
       <ScannerDialog open={scannerOpen} onOpenChange={setScannerOpen} onScan={handleScan} />
+      <Dialog open={!!pendingScan} onOpenChange={(open) => { if (!open) setPendingScan(null); }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Confirm attendance</DialogTitle>
+            <DialogDescription>
+              Would you like to update attendance for {pendingScan?.name}?
+            </DialogDescription>
+          </DialogHeader>
+          <Button size="lg" onClick={confirmPendingScan}>
+            Confirm
+          </Button>
+        </DialogContent>
+      </Dialog>
       <SettingsDialog
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
