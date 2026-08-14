@@ -256,6 +256,10 @@ function Home() {
   }
   if (!session) return <SignIn />;
 
+  if (rosterQuery.isPending) {
+    return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Loading…</div>;
+  }
+
   if (rosterQuery.isError) {
     const message = rosterQuery.error instanceof Error ? rosterQuery.error.message : "";
     if (message.includes("Unauthorized")) {
@@ -265,7 +269,7 @@ function Home() {
             <CardHeader className="items-center text-center">
               <CardTitle className="text-xl">Access restricted</CardTitle>
               <p className="text-sm text-muted-foreground">
-                {session.user.email} does not have access to this app. Contact the program admin if you
+                {session.user.email} does not have access to this app. Contact the system admin if you
                 believe this is a mistake.
               </p>
             </CardHeader>
