@@ -3,6 +3,7 @@ import { createMiddleware } from '@tanstack/react-start'
 import { getRequest } from '@tanstack/react-start/server'
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from './types'
+import { supabaseAdmin } from './client.server'
 
 
 
@@ -96,6 +97,19 @@ export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server
 
     if (!data.claims.sub) {
       throw new Error('Unauthorized: No user ID found in token');
+    }
+
+    const email = (data.claims as { email?: string }).email;
+    if (!email) {
+      throw new Error('Unauthorized: No email found in token');
+    }
+    const { data: allowed, error: allowedError } = await supabaseAdmin
+      .from('allowed_users')
+      .select('email')
+      .eq('email', email.toLowerCase())
+      .maybeSingle();
+    if (allowedError || !allowed) {
+      throw new Error(`Unauthorized: ${email} does not have access to this app.`);
     }
 
     return next({

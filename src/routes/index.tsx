@@ -139,6 +139,7 @@ function Home() {
   const [search, setSearch] = useState("");
 
 
+
   const settingsQuery = useQuery({
     queryKey: ["settings"],
     enabled: !!session,
@@ -155,7 +156,7 @@ function Home() {
 
   const rosterQuery = useQuery({
     queryKey: ["roster", settingsQuery.data?.spreadsheet_id, settingsQuery.data?.sheet_range],
-    enabled: !!session && !!settingsQuery.data,
+    enabled: !!session,
     queryFn: () => rosterFn({}),
   });
 
@@ -254,6 +255,30 @@ function Home() {
     return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Loading…</div>;
   }
   if (!session) return <SignIn />;
+
+  if (rosterQuery.isError) {
+    const message = rosterQuery.error instanceof Error ? rosterQuery.error.message : "";
+    if (message.includes("Unauthorized")) {
+      return (
+        <main className="flex min-h-screen items-center justify-center bg-secondary px-4">
+          <Card className="w-full max-w-md shadow-[var(--shadow-card)]">
+            <CardHeader className="items-center text-center">
+              <CardTitle className="text-xl">Access restricted</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                {session.user.email} does not have access to this app. Contact the program admin if you
+                believe this is a mistake.
+              </p>
+            </CardHeader>
+            <CardContent>
+              <Button className="w-full" variant="outline" onClick={() => supabase.auth.signOut()}>
+                Sign out
+              </Button>
+            </CardContent>
+          </Card>
+        </main>
+      );
+    }
+  }
 
   const filtered = students.filter((s) =>
     (s.name + s.id + s.group).toLowerCase().includes(search.toLowerCase()),
