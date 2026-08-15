@@ -97,9 +97,11 @@ function SignIn() {
     <main className="login-background flex min-h-screen items-center justify-center px-4">
       <Card className="relative z-10 w-full max-w-md shadow-[var(--shadow-raised)]">
         <CardHeader className="items-center text-center">
-          <div className="mb-2 flex size-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
-            <QrCode className="size-7" />
-          </div>
+          <img
+            src="/primary-rec-logo.png"
+            alt="Primary Religious Education Team"
+            className="mb-3 h-auto w-56"
+          />
           <CardTitle className="text-2xl">Chicago Downtown REC Attendance</CardTitle>
           <p className="text-sm text-muted-foreground">
             Sign in with your Google account to manage the religious education roster.
