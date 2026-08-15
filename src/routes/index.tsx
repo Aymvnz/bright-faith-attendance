@@ -309,10 +309,10 @@ function Home() {
   return (
     <div className="min-h-screen bg-background">
       <header className="relative z-10 bg-primary text-primary-foreground shadow-[var(--shadow-raised)]">
-        <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-3 px-4 py-4 sm:grid-cols-3">
+        <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-3 py-4 pl-4 pr-4 sm:grid-cols-3">
           <div className="flex items-center gap-2 font-semibold">
-            <QrCode className="size-5" />
-            <h1 className="text-lg">Chicago Downtown REC Attendance</h1>
+            <img src="/primary-rec-logo.png" alt="Primary Religious Education Team" className="h-9 w-auto shrink-0 rounded-md" />
+            <h1 className="whitespace-nowrap text-base sm:text-lg">Chicago Downtown REC Attendance</h1>
           </div>
           <div className="order-last text-center font-mono text-sm tabular-nums opacity-90 sm:order-none">
             <LiveClock />
@@ -331,7 +331,7 @@ function Home() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl space-y-6 px-4 py-8">
+      <main className="mx-auto max-w-7xl space-y-6 px-4 py-8">
         <div className="grid gap-4 sm:grid-cols-3">
           <Card className="shadow-[var(--shadow-raised)]">
             <CardHeader className="pb-2">
