@@ -433,75 +433,62 @@ function Home() {
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="px-0 pb-0">
-                  <table className="w-full table-fixed text-sm">
-                    <colgroup>
-                      <col className="w-[35%]" />
-                      <col className="w-[20%]" />
-                      <col className="w-[45%]" />
-                     </colgroup>
-                    <thead className="bg-muted text-left text-muted-foreground">
-                      <tr>
-                        <th className="px-4 py-3 font-medium">Student</th>
-                        <th className="px-4 py-3 font-medium">Today</th>
-                        <th className="px-4 py-3 text-right font-medium">Mark</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {groupStudents.map((student) => {
-                        const record = attendance.get(student.id);
-                        return (
-                          <tr key={student.id} className="border-t">
-                            <td className="px-4 py-3">
+                  <div className="divide-y">
+                    {groupStudents.map((student) => {
+                      const record = attendance.get(student.id);
+                      return (
+                        <div
+                          key={student.id}
+                          className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
+                        >
+                          <div className="flex items-center justify-between gap-3 sm:block">
+                            <div>
                               <div className="font-medium">{student.name}</div>
                               <div className="text-xs text-muted-foreground">{student.id}</div>
-                            </td>
-                            <td className="px-4 py-3">
-                              {record ? (
-                                <Badge
-                                  variant="outline"
-                                  className={
-                                      record.status === "present"
-                                        ? "border-transparent bg-primary text-primary-foreground shadow"
-                                        : record.status === "absent"
-                                          ? "border-transparent bg-warning text-warning-foreground shadow"
-                                          : record.status === "tardy"
-                                            ? "border-transparent bg-secondary text-secondary-foreground shadow"
-                                            : "border-transparent bg-sky-100 text-primary shadow"
-                                    }
->
-                                  {record.status}
-                                  <span className="ml-1 opacity-80">
-                                    {new Date(record.scanned_at).toLocaleTimeString([], {
-                                      hour: "numeric",
-                                      minute: "2-digit",
-                                    })}
-                                  </span>
-                                </Badge>
-                              ) : (
-                                <Badge variant="outline">not scanned</Badge>
-                              )}
-                            </td>
-                            <td className="px-4 py-3 text-right">
-                              <div className="inline-flex gap-2">
-                                <Button size="sm" variant="outline" onClick={() => mark(student.id, student.name, "present")}>
-                                  Present
-                                </Button>
-                                <Button size="sm" variant="outline" onClick={() => mark(student.id, student.name, "tardy")}>
-                                  Tardy
-                                </Button>
-                                <Button size="sm" variant="outline" onClick={() => mark(student.id, student.name, "absent")}>
-                                  Absent
-                                </Button>
-                                <Button size="sm" variant="outline" onClick={() => mark(student.id, student.name, "excused")}>
-                                  Excused
-                                </Button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                            </div>
+                            {record ? (
+                              <Badge variant={record.status === "tardy" ? "destructive" : "default"} className="shrink-0 sm:hidden">
+                                {record.status}
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="shrink-0 sm:hidden">
+                                not scanned
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="hidden sm:block">
+                            {record ? (
+                              <Badge variant={record.status === "tardy" ? "destructive" : "default"}>
+                                {record.status}
+                                <span className="ml-1 opacity-80">
+                                  {new Date(record.scanned_at).toLocaleTimeString([], {
+                                    hour: "numeric",
+                                    minute: "2-digit",
+                                  })}
+                                </span>
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline">not scanned</Badge>
+                            )}
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 sm:flex sm:w-auto">
+                            <Button size="sm" variant="outline" onClick={() => mark(student.id, student.name, "present")}>
+                              Present
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => mark(student.id, student.name, "tardy")}>
+                              Tardy
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => mark(student.id, student.name, "absent")}>
+                              Absent
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => mark(student.id, student.name, "excused")}>
+                              Excused
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </AccordionContent>
               </AccordionItem>
             ))}
