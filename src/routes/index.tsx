@@ -439,24 +439,13 @@ function Home() {
                       return (
                         <div
                           key={student.id}
-                          className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
+                          className="grid grid-cols-1 items-start gap-3 p-4 sm:grid-cols-[minmax(0,1fr)_9rem_auto] sm:items-center"
                         >
-                          <div className="flex items-center justify-between gap-3 sm:block">
-                            <div>
-                              <div className="font-medium">{student.name}</div>
-                              <div className="text-xs text-muted-foreground">{student.id}</div>
-                            </div>
-                            {record ? (
-                              <Badge variant={record.status === "tardy" ? "destructive" : "default"} className="shrink-0 sm:hidden">
-                                {record.status}
-                              </Badge>
-                            ) : (
-                              <Badge variant="outline" className="shrink-0 sm:hidden">
-                                not scanned
-                              </Badge>
-                            )}
+                          <div>
+                            <div className="font-medium">{student.name}</div>
+                            <div className="text-xs text-muted-foreground">{student.id}</div>
                           </div>
-                          <div className="hidden sm:block">
+                          <div>
                             {record ? (
                               <Badge variant={record.status === "tardy" ? "destructive" : "default"}>
                                 {record.status}
