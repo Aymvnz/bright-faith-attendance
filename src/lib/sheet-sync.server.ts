@@ -151,3 +151,49 @@ export async function writeAttendanceToTab(
 
   return { matched, updated: updates.length, appended: toAppend.length };
 }
+
+export async function markBlankCellsAbsent(
+  spreadsheetId: string,
+  tabTitle: string,
+  rosterStudents: { id: string; name: string }[],
+): Promise<{ markedAbsent: string[]; alreadyFilled: number; noRow: number }> {
+  const quoted = `'${tabTitle.replace(/'/g, "''")}'`;
+  const read = await call(`/${spreadsheetId}/values/${encodeRange(`${quoted}!A1:B500`)}`);
+  const rows: string[][] = read.values ?? [];
+
+  // slug -> row index for every row that has a name
+  const rowBySlug = new Map<string, number>();
+  rows.forEach((row, i) => {
+    const name = (row?.[0] ?? "").toString().trim();
+    if (name) rowBySlug.set(slugifyName(name), i);
+  });
+
+  const updates: { range: string; values: string[][] }[] = [];
+  const markedAbsent: string[] = [];
+  let alreadyFilled = 0;
+  let noRow = 0;
+
+  for (const student of rosterStudents) {
+    const rowIndex = rowBySlug.get(slugifyName(student.name));
+    if (rowIndex === undefined) {
+      noRow += 1;
+      continue;
+    }
+    const current = (rows[rowIndex]?.[1] ?? "").toString().trim();
+    if (current !== "") {
+      alreadyFilled += 1;
+      continue; // never touch a cell that already has a value
+    }
+    updates.push({ range: `${quoted}!B${rowIndex + 1}`, values: [["A"]] });
+    markedAbsent.push(student.name);
+  }
+
+  if (updates.length) {
+    await call(`/${spreadsheetId}/values:batchUpdate`, {
+      method: "POST",
+      body: JSON.stringify({ valueInputOption: "USER_ENTERED", data: updates }),
+    });
+  }
+
+  return { markedAbsent, alreadyFilled, noRow };
+}

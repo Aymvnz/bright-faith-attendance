@@ -25,13 +25,19 @@ export const Route = createFileRoute("/api/cron/mark-absent")({
         }
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { readRoster } = await import("@/lib/roster-core.server");
+        const { findDateTab, markBlankCellsAbsent } = await import("@/lib/sheet-sync.server");
 
-        const sessionDate = new Intl.DateTimeFormat("en-CA", {
-          timeZone: "America/Chicago",
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
-        }).format(new Date());
+        const { data: settings } = await supabaseAdmin
+          .from("program_settings")
+          .select("spreadsheet_id")
+          .limit(1)
+          .maybeSingle();
+
+        const spreadsheetId = settings?.spreadsheet_id;
+        if (!spreadsheetId) {
+          return Response.json({ ok: false, error: "No Google Sheet connected yet." }, { status: 500 });
+        }
 
         const roster = await readRoster(supabaseAdmin);
         if (roster.error) {
@@ -41,74 +47,39 @@ export const Route = createFileRoute("/api/cron/mark-absent")({
           return Response.json({ ok: true, sessionDate, markedAbsent: 0, note: "Roster is empty." });
         }
 
-        const { data: existing, error: existingError } = await supabaseAdmin
-          .from("attendance_records")
-          .select("student_id")
-          .eq("session_date", sessionDate);
-        if (existingError) {
+        const { title } = await findDateTab(spreadsheetId, sessionDate);
+        if (!title) {
+          const [, mo, da] = sessionDate.split("-");
           return Response.json(
-            { ok: false, step: "read-existing", error: existingError.message },
+            { ok: false, error: `No tab found for ${Number(mo)}/${Number(da)}.` },
             { status: 500 },
           );
         }
 
-        const already = new Set((existing ?? []).map((r) => r.student_id));
-        const toInsert = roster.students
-          .filter((s) => !already.has(s.id))
-          .map((s) => ({
-            student_id: s.id,
-            student_name: s.name,
-            status: "absent",
-            session_date: sessionDate,
-          }));
+        // Only fills in cells that are currently blank — anyone who already
+        // has a value in the sheet (present, tardy, excused, or even a
+        // manually-typed status) is left completely untouched.
+        const result = await markBlankCellsAbsent(spreadsheetId, title, roster.students);
 
-        if (toInsert.length) {
-          const { error: insertError } = await supabaseAdmin
+        // Keep Supabase's own records consistent with what we just marked
+        // absent in the sheet, without touching students the sheet already
+        // had a value for.
+        if (result.markedAbsent.length) {
+          const rows = result.markedAbsent.map((name) => {
+            const student = roster.students.find((s) => s.name === name)!;
+            return {
+              student_id: student.id,
+              student_name: student.name,
+              status: "absent",
+              session_date: sessionDate,
+            };
+          });
+          await supabaseAdmin
             .from("attendance_records")
-            .upsert(toInsert, { onConflict: "student_id,session_date", ignoreDuplicates: true });
-          if (insertError) {
-            return Response.json({ ok: false, step: "insert", error: insertError.message }, { status: 500 });
-          }
+            .upsert(rows, { onConflict: "student_id,session_date", ignoreDuplicates: true });
         }
 
-        // Sync today's full attendance (including the absences we just added)
-        // to the Google Sheet tab — same logic the manual sync button uses,
-        // inlined here directly rather than through the shared wrapper.
-        const { data: settings } = await supabaseAdmin
-          .from("program_settings")
-          .select("spreadsheet_id")
-          .limit(1)
-          .maybeSingle();
-
-        const spreadsheetId = settings?.spreadsheet_id;
-        let sync: Record<string, unknown> = { ok: false, error: "No Google Sheet connected yet." };
-
-        if (spreadsheetId) {
-          const { data: records, error: recordsError } = await supabaseAdmin
-            .from("attendance_records")
-            .select("student_name, status")
-            .eq("session_date", sessionDate);
-
-          if (recordsError) {
-            sync = { ok: false, error: recordsError.message };
-          } else {
-            const entries = (records ?? []).map((r) => ({ name: r.student_name, status: r.status }));
-            try {
-              const { title } = await findDateTab(spreadsheetId, sessionDate);
-              if (!title) {
-                const [, mo, da] = sessionDate.split("-");
-                sync = { ok: false, error: `No tab found for that date (${Number(mo)}/${Number(da)}).` };
-              } else {
-                const result = await writeAttendanceToTab(spreadsheetId, title, entries);
-                sync = { ok: true, tab: title, ...result };
-              }
-            } catch (e) {
-              sync = { ok: false, error: e instanceof Error ? e.message : "Sheet sync failed." };
-            }
-          }
-        }
-
-        return Response.json({ ok: true, sessionDate, markedAbsent: toInsert.length, sync });
+        return Response.json({ ok: true, sessionDate, tab: title, ...result });
       },
     },
   },
