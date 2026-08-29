@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { findDateTab, writeAttendanceToTab } from "./sheet-sync.server";
+import { findDateTab, writeAttendanceToTab, markBlankCellsAbsent } from "./sheet-sync.server";
+import { readRoster } from "./roster-core.server";
 
 export type SheetSyncResult = {
   ok: boolean;
@@ -8,6 +9,7 @@ export type SheetSyncResult = {
   matched?: number;
   updated?: number;
   appended?: number;
+  markedAbsent?: string[];
   error?: string;
 };
 
@@ -43,8 +45,18 @@ export const syncAttendanceToSheet = createServerFn({ method: "POST" })
           error: `No tab found for ${isToday ? "today" : "that date"} (${label}). Add a tab named like "${label}" to the sheet.`,
         };
       }
+
       const result = await writeAttendanceToTab(spreadsheetId, title, entries);
-      return { ok: true, tab: title, ...result };
+
+      // Anyone still blank after writing real statuses hasn't scanned in at
+      // all — fill just those cells with absent, never touching anyone who
+      // already has a value (real or manually entered).
+      const roster = await readRoster(context.supabase);
+      const absentResult = roster.students.length
+        ? await markBlankCellsAbsent(spreadsheetId, title, roster.students)
+        : { markedAbsent: [] };
+
+      return { ok: true, tab: title, ...result, markedAbsent: absentResult.markedAbsent };
     } catch (e) {
       return { ok: false, error: e instanceof Error ? e.message : "Sheet sync failed." };
     }
