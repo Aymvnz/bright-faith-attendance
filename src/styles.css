@@ -68,55 +68,47 @@
 
 
 :root {
-  --radius: 0.75rem;
-  --background: #fcfefb;
-  --foreground: #101f13;
+  --radius: 0.5rem;
+  --background: #ffffff;
+  --foreground: #1e3558;
   --card: #ffffff;
-  --card-foreground: #101f13;
+  --card-foreground: #1e3558;
   --popover: #ffffff;
-  --popover-foreground: #101f13;
-  --primary: #006000;
-  --primary-foreground: #fbfcf9;
-  --secondary: #e5f6e3;
-  --secondary-foreground: #013801;
-  --muted: #edf5ec;
-  --muted-foreground: #4c5a4b;
-  --accent: #9d2900;
-  --accent-foreground: #fefbf8;
-  --destructive: #9d2900;
-  --destructive-foreground: #fefbf8;
-  --border: #d7e2d6;
-  --input: #d7e2d6;
-  --ring: #006000;
-  --chart-1: #006000;
-  --chart-2: #9d2900;
-  --chart-3: #397337;
-  --chart-4: #77a774;
-  --chart-5: #ae5528;
-  --sidebar: #006000;
-  --sidebar-foreground: #fbfcf9;
-  --sidebar-primary: #fbfcf9;
-  --sidebar-primary-foreground: #006000;
-  --sidebar-accent: #004100;
-  --sidebar-accent-foreground: #fbfcf9;
-  --sidebar-border: #004100;
-  --sidebar-ring: #fbfcf9;
-  --success: #006000;
-  --success-foreground: #fbfcf9;
-  --warning: #df911a;
-  --warning-foreground: #25170c;
-  --gradient-brand: linear-gradient(135deg, #006000, #003c00);
-  --shadow-card: 0 1px 2px rgba(16, 31, 19, 0.06), 0 8px 24px rgba(16, 31, 19, 0.08);
+  --popover-foreground: #1e3558;
+  --primary: #1e3558;
+  --primary-foreground: #ffffff;
+  --secondary: #eef1f6;
+  --secondary-foreground: #1e3558;
+  --muted: #eef1f6;
+  --muted-foreground: #5b6b85;
+  --accent: #c9a227;
+  --accent-foreground: #1e3558;
+  --destructive: #b3261e;
+  --destructive-foreground: #ffffff;
+  --border: #dde3ec;
+  --input: #dde3ec;
+  --ring: #1e3558;
+  --chart-1: #1e3558;
+  --chart-2: #c9a227;
+  --chart-3: #5b6b85;
+  --chart-4: #8f9db3;
+  --chart-5: #c3cbd8;
+  --sidebar: #1e3558;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #ffffff;
+  --sidebar-primary-foreground: #1e3558;
+  --sidebar-accent: #16273f;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #16273f;
+  --sidebar-ring: #c9a227;
+  --success: #1e6b4f;
+  --success-foreground: #ffffff;
+  --warning: #c9a227;
+  --warning-foreground: #1e3558;
+  --gradient-brand: linear-gradient(135deg, #1e3558, #0f1c30);
+  --shadow-card: 0 1px 2px rgba(30, 53, 88, 0.05), 0 8px 24px rgba(30, 53, 88, 0.08);
 }
-.login-background {
-  min-height: 100vh;
-  background: radial-gradient(
-    circle at center,
-    var(--secondary) 0%,
-    oklch(0.63 0.04 167) 32%,
-    var(--primary) 100%
-  );
-}
+
 @layer base {
   * {
     border-color: var(--color-border);

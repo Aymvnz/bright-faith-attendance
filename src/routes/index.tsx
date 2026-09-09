@@ -94,13 +94,13 @@ function SignIn() {
   };
 
   return (
-    <main className="login-background flex min-h-screen items-center justify-center px-4">
+    <main className="flex min-h-screen items-center justify-center bg-secondary px-4">
       <Card className="relative z-10 w-full max-w-md shadow-[var(--shadow-raised)]">
         <CardHeader className="items-center text-center">
           <img
-            src="/primary-rec-logo.png"
-            alt="Primary Religious Education Team"
-            className="mb-3 h-auto w-56"
+            src="/itreb-logo.png"
+            alt="Ismaili Tariqah and Religious Education Board USA"
+            className="mb-3 h-auto w-64"
           />
           <CardTitle className="text-2xl">Chicago Downtown REC Attendance</CardTitle>
           <p className="text-sm text-muted-foreground">
@@ -307,15 +307,12 @@ function Home() {
   const tardyCount = [...attendance.values()].filter((a) => a.status === "tardy").length;
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="relative z-10 bg-primary text-primary-foreground shadow-[var(--shadow-raised)]">
-        <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-3 py-4 pl-4 pr-4 sm:grid-cols-3">
+    <div className="min-h-screen bg-secondary">
+      <header className="bg-primary text-primary-foreground">
+        <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-3 py-4 pl-0 pr-4 sm:grid-cols-2">
           <div className="flex items-center gap-2 font-semibold">
-            <img src="/primary-rec-logo.png" alt="Primary Religious Education Team" className="h-9 w-auto shrink-0 rounded-md" />
+            <img src="/itreb-logo-white.png" alt="Ismaili Tariqah and Religious Education Board USA" className="h-8 w-auto shrink-0" />
             <h1 className="whitespace-nowrap text-base sm:text-lg">Chicago Downtown REC Attendance</h1>
-          </div>
-          <div className="order-last text-center font-mono text-sm tabular-nums opacity-90 sm:order-none">
-            <LiveClock />
           </div>
           <div className="flex flex-wrap items-center gap-2 sm:justify-end">
             <Button asChild variant="secondary" size="sm">
