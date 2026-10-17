@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as QrCodesRouteImport } from './routes/qr-codes'
+import { Route as ApiScanRouteImport } from './routes/api/scan'
 import { Route as ApiCronCreateWeeklyTabRouteImport } from './routes/api/cron/create-weekly-tab'
 import { Route as ApiCronMarkAbsentRouteImport } from './routes/api/cron/mark-absent'
 
@@ -22,6 +23,11 @@ const IndexRoute = IndexRouteImport.update({
 const QrCodesRoute = QrCodesRouteImport.update({
   id: '/qr-codes',
   path: '/qr-codes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiScanRoute = ApiScanRouteImport.update({
+  id: '/api/scan',
+  path: '/api/scan',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiCronCreateWeeklyTabRoute = ApiCronCreateWeeklyTabRouteImport.update({
@@ -38,12 +44,14 @@ const ApiCronMarkAbsentRoute = ApiCronMarkAbsentRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/qr-codes': typeof QrCodesRoute
+  '/api/scan': typeof ApiScanRoute
   '/api/cron/create-weekly-tab': typeof ApiCronCreateWeeklyTabRoute
   '/api/cron/mark-absent': typeof ApiCronMarkAbsentRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/qr-codes': typeof QrCodesRoute
+  '/api/scan': typeof ApiScanRoute
   '/api/cron/create-weekly-tab': typeof ApiCronCreateWeeklyTabRoute
   '/api/cron/mark-absent': typeof ApiCronMarkAbsentRoute
 }
@@ -51,20 +59,30 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/qr-codes': typeof QrCodesRoute
+  '/api/scan': typeof ApiScanRoute
   '/api/cron/create-weekly-tab': typeof ApiCronCreateWeeklyTabRoute
   '/api/cron/mark-absent': typeof ApiCronMarkAbsentRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/qr-codes' | '/api/cron/create-weekly-tab' | '/api/cron/mark-absent'
+    | '/'
+    | '/qr-codes'
+    | '/api/scan'
+    | '/api/cron/create-weekly-tab'
+    | '/api/cron/mark-absent'
   fileRoutesByTo: FileRoutesByTo
   to:
-    '/' | '/qr-codes' | '/api/cron/create-weekly-tab' | '/api/cron/mark-absent'
+    | '/'
+    | '/qr-codes'
+    | '/api/scan'
+    | '/api/cron/create-weekly-tab'
+    | '/api/cron/mark-absent'
   id:
     | '__root__'
     | '/'
     | '/qr-codes'
+    | '/api/scan'
     | '/api/cron/create-weekly-tab'
     | '/api/cron/mark-absent'
   fileRoutesById: FileRoutesById
@@ -72,6 +90,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   QrCodesRoute: typeof QrCodesRoute
+  ApiScanRoute: typeof ApiScanRoute
   ApiCronCreateWeeklyTabRoute: typeof ApiCronCreateWeeklyTabRoute
   ApiCronMarkAbsentRoute: typeof ApiCronMarkAbsentRoute
 }
@@ -90,6 +109,13 @@ declare module '@tanstack/react-router' {
       path: '/qr-codes'
       fullPath: '/qr-codes'
       preLoaderRoute: typeof QrCodesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/scan': {
+      id: '/api/scan'
+      path: '/api/scan'
+      fullPath: '/api/scan'
+      preLoaderRoute: typeof ApiScanRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/cron/create-weekly-tab': {
@@ -112,6 +138,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   QrCodesRoute: QrCodesRoute,
+  ApiScanRoute: ApiScanRoute,
   ApiCronCreateWeeklyTabRoute: ApiCronCreateWeeklyTabRoute,
   ApiCronMarkAbsentRoute: ApiCronMarkAbsentRoute,
 }

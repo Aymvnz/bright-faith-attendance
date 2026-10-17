@@ -18,6 +18,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { ScannerDialog } from "@/components/ScannerDialog";
+import { PublicScan } from "@/components/PublicScan";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { SettingsDialog, type ProgramSettings } from "@/components/SettingsDialog";
 
@@ -107,10 +108,11 @@ function SignIn() {
             Sign in with your Google account to manage the religious education roster.
           </p>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
           <Button className="w-full" size="lg" onClick={signIn} disabled={busy}>
             {busy ? "Opening Google…" : "Continue with Google"}
           </Button>
+          <PublicScan />
         </CardContent>
       </Card>
     </main>
