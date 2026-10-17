@@ -15,7 +15,7 @@ export type SheetSyncResult = {
 
 export const syncAttendanceToSheet = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { sessionDate: string }) => input)
+  .validator((input: { sessionDate: string }) => input)
   .handler(async ({ data, context }): Promise<SheetSyncResult> => {
     const { data: settings } = await context.supabase
       .from("program_settings")
