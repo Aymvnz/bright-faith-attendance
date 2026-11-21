@@ -15,15 +15,13 @@ export const Route = createFileRoute("/board")({
   component: BoardPage,
 });
 
-// Shows "Imran Q." on the big screen. Set to true to show full names.
-const SHOW_FULL_NAMES = false;
 const TZ = "America/Chicago";
 
 const STATUS_DOT: Record<string, string> = {
-  present: "bg-emerald-400",
-  tardy: "bg-amber-400",
-  excused: "bg-sky-400",
-  absent: "bg-rose-400",
+  present: "bg-emerald-500",
+  tardy: "bg-amber-500",
+  excused: "bg-sky-500",
+  absent: "bg-rose-500",
 };
 
 function chicagoToday() {
@@ -33,13 +31,6 @@ function chicagoToday() {
     month: "2-digit",
     day: "2-digit",
   }).format(new Date());
-}
-
-function displayName(name: string) {
-  if (SHOW_FULL_NAMES) return name;
-  const parts = name.trim().split(/\s+/);
-  if (parts.length < 2) return name;
-  return `${parts[0]} ${parts[parts.length - 1]!.charAt(0)}.`;
 }
 
 function Clock() {
@@ -77,14 +68,26 @@ function Screen({ children }: { children: ReactNode }) {
   );
 }
 
-function Stat({ label, value, dot }: { label: string; value: number; dot: string }) {
+function MetricCard({
+  label,
+  value,
+  dot,
+}: {
+  label: string;
+  value: number;
+  dot: string;
+}) {
   return (
-    <div className="flex items-center gap-3">
-      <span className={`size-3 shrink-0 rounded-full ${dot}`} />
-      <span className="text-base font-medium uppercase tracking-wider text-slate-300">
-        {label}
-      </span>
-      <span className="text-3xl font-bold tabular-nums text-white">{value}</span>
+    <div className="rounded-2xl border border-slate-200/90 bg-white p-7 shadow-xs">
+      <div className="flex items-center gap-3">
+        <span className={`size-3.5 shrink-0 rounded-full ${dot}`} />
+        <span className="text-base font-semibold uppercase tracking-wider text-slate-500">
+          {label}
+        </span>
+      </div>
+      <div className="mt-4 text-6xl font-bold tabular-nums tracking-tight text-[#142b4d]">
+        {value}
+      </div>
     </div>
   );
 }
@@ -116,11 +119,7 @@ function BoardPage() {
     },
   });
 
-  const students = useMemo(() => {
-    const list = rosterQuery.data?.students ?? [];
-    return [...list].sort((a, b) => a.name.localeCompare(b.name));
-  }, [rosterQuery.data]);
-
+  const students = useMemo(() => rosterQuery.data?.students ?? [], [rosterQuery.data]);
   const records = useMemo(() => attendanceQuery.data ?? [], [attendanceQuery.data]);
 
   const byStudent = useMemo(() => {
@@ -193,10 +192,10 @@ function BoardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f1f5f9] text-[#142b4d]">
-      {/* Deep Navy Header Band */}
-      <div className="bg-[#142b4d] px-12 pb-10 pt-8 text-white">
-        <header className="mb-8 flex items-baseline justify-between border-b border-white/15 pb-5">
+    <div className="flex min-h-screen flex-col bg-[#f1f5f9] text-[#142b4d]">
+      {/* Top Bar */}
+      <header className="bg-[#142b4d] px-12 py-7 text-white">
+        <div className="mx-auto flex max-w-7xl items-baseline justify-between">
           <div className="flex items-baseline gap-4">
             <h1 className="text-3xl font-bold tracking-tight">Chicago Downtown REC</h1>
             <span className="text-xl font-normal text-slate-300">Attendance</span>
@@ -207,63 +206,47 @@ function BoardPage() {
             )}
           </div>
           <Clock />
-        </header>
+        </div>
+      </header>
 
-        {/* Minimalist Summary Row */}
-        <div className="flex flex-wrap items-center justify-between gap-8">
-          <div className="flex items-baseline gap-6">
-            <div className="flex items-baseline gap-3">
-              <span className="text-7xl font-bold tabular-nums tracking-tight text-white">
-                {checkedIn}
-              </span>
-              <span className="text-4xl font-normal tabular-nums text-slate-300">
-                / {total}
-              </span>
+      {/* Hero Numbers Dashboard */}
+      <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col justify-center gap-8 px-12 py-10">
+        {/* Primary Hero Counter */}
+        <section className="rounded-3xl bg-[#142b4d] px-10 py-12 text-white shadow-sm">
+          <div className="flex flex-wrap items-end justify-between gap-8">
+            <div>
+              <div className="text-base font-semibold uppercase tracking-widest text-slate-300">
+                Checked In
+              </div>
+              <div className="mt-2 flex items-baseline gap-4">
+                <span className="text-[7.5rem] font-bold leading-none tabular-nums tracking-tight">
+                  {checkedIn}
+                </span>
+                <span className="text-5xl font-medium tabular-nums text-slate-300">
+                  / {total}
+                </span>
+              </div>
             </div>
-            <span className="text-5xl font-bold tabular-nums text-sky-300">{pct}%</span>
+
+            <div className="text-7xl font-bold tabular-nums text-sky-300">{pct}%</div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-x-9 gap-y-3">
-            <Stat label="Present" value={present} dot={STATUS_DOT.present} />
-            <Stat label="Tardy" value={tardy} dot={STATUS_DOT.tardy} />
-            <Stat label="Excused" value={excused} dot={STATUS_DOT.excused} />
-            <Stat label="Absent" value={absent} dot={STATUS_DOT.absent} />
-            <Stat label="Not here" value={notYet} dot="border-2 border-slate-400" />
+          <div className="mt-8 h-4 overflow-hidden rounded-full bg-white/15">
+            <div
+              className="h-full rounded-full bg-sky-300 transition-all duration-500"
+              style={{ width: `${pct}%` }}
+            />
           </div>
-        </div>
+        </section>
 
-        <div className="mt-6 h-2.5 overflow-hidden rounded-full bg-white/15">
-          <div
-            className="h-full rounded-full bg-sky-300 transition-all duration-500"
-            style={{ width: `${pct}%` }}
-          />
-        </div>
-      </div>
-
-      {/* Clean Single-Roster Canvas */}
-      <main className="px-12 py-10">
-        <div className="flex flex-wrap gap-3">
-          {students.map((s) => {
-            const st = byStudent.get(s.id);
-            const isHere = st === "present" || st === "tardy";
-
-            return (
-              <span
-                key={s.id}
-                className={`inline-flex items-center gap-2.5 rounded-xl px-5 py-2.5 text-xl font-semibold transition-colors ${
-                  isHere
-                    ? "bg-[#142b4d] text-white"
-                    : "bg-white text-slate-500 ring-1 ring-slate-200/80"
-                }`}
-              >
-                {st && st !== "present" && (
-                  <span className={`size-2.5 shrink-0 rounded-full ${STATUS_DOT[st]}`} />
-                )}
-                {displayName(s.name)}
-              </span>
-            );
-          })}
-        </div>
+        {/* Breakdown Number Cards */}
+        <section className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-5">
+          <MetricCard label="Present" value={present} dot={STATUS_DOT.present} />
+          <MetricCard label="Tardy" value={tardy} dot={STATUS_DOT.tardy} />
+          <MetricCard label="Excused" value={excused} dot={STATUS_DOT.excused} />
+          <MetricCard label="Absent" value={absent} dot={STATUS_DOT.absent} />
+          <MetricCard label="Not here" value={notYet} dot="border-2 border-slate-400" />
+        </section>
       </main>
     </div>
   );
