@@ -20,10 +20,10 @@ const SHOW_FULL_NAMES = false;
 const TZ = "America/Chicago";
 
 const STATUS_DOT: Record<string, string> = {
-  present: "bg-[#2ea36f]",
-  tardy: "bg-[#d4af37]",
-  excused: "bg-[#4f78c7]",
-  absent: "bg-[#b84a5b]",
+  present: "bg-[#15803d]",
+  tardy: "bg-[#ca8a04]",
+  excused: "bg-[#2563eb]",
+  absent: "bg-[#b91c1c]",
 };
 
 function chicagoToday() {
@@ -63,8 +63,8 @@ function Clock() {
     return () => clearInterval(id);
   }, []);
   return (
-    <div className="flex items-baseline gap-4 text-right">
-      <span className="text-lg text-[#7d92b0]">
+    <div className="flex items-baseline gap-5 text-right">
+      <span className="text-xl font-medium text-slate-500">
         {now.toLocaleDateString("en-US", {
           timeZone: TZ,
           weekday: "short",
@@ -72,7 +72,7 @@ function Clock() {
           day: "numeric",
         })}
       </span>
-      <span className="text-3xl font-semibold tabular-nums tracking-tight text-white">
+      <span className="text-4xl font-bold tabular-nums tracking-tight text-slate-900">
         {now.toLocaleTimeString("en-US", {
           timeZone: TZ,
           hour: "numeric",
@@ -85,7 +85,7 @@ function Clock() {
 
 function Screen({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#0b1526] p-8 text-white">
+    <div className="flex min-h-screen items-center justify-center bg-slate-50 p-10 text-slate-900">
       {children}
     </div>
   );
@@ -94,9 +94,11 @@ function Screen({ children }: { children: ReactNode }) {
 function Stat({ label, value, dot }: { label: string; value: number; dot: string }) {
   return (
     <div className="flex items-center gap-3">
-      <span className={`size-2.5 rounded-full ${dot}`} />
-      <span className="text-sm uppercase tracking-wider text-[#7d92b0]">{label}</span>
-      <span className="text-2xl font-semibold tabular-nums text-white">{value}</span>
+      <span className={`size-3 shrink-0 rounded-full ${dot}`} />
+      <span className="text-base font-semibold uppercase tracking-wider text-slate-500">
+        {label}
+      </span>
+      <span className="text-3xl font-bold tabular-nums text-slate-900">{value}</span>
     </div>
   );
 }
@@ -179,7 +181,7 @@ function BoardPage() {
   if (loading) {
     return (
       <Screen>
-        <p className="text-xl text-[#7d92b0]">Loading…</p>
+        <p className="text-3xl text-slate-500">Loading…</p>
       </Screen>
     );
   }
@@ -187,14 +189,14 @@ function BoardPage() {
   if (!session) {
     return (
       <Screen>
-        <div className="max-w-md text-center">
-          <h1 className="text-3xl font-bold">Sign in required</h1>
-          <p className="mt-3 text-lg text-[#7d92b0]">
+        <div className="max-w-lg rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-xs">
+          <h1 className="text-4xl font-bold text-slate-900">Sign in required</h1>
+          <p className="mt-4 text-xl text-slate-600">
             Sign in on the main page with an approved account, then come back to this page.
           </p>
           <Link
             to="/"
-            className="mt-6 inline-block rounded-lg bg-[#d4af37] px-6 py-3 font-semibold text-[#0b1526]"
+            className="mt-8 inline-block rounded-xl bg-slate-900 px-8 py-4 text-xl font-semibold text-white hover:bg-slate-800"
           >
             Go to sign in
           </Link>
@@ -206,9 +208,9 @@ function BoardPage() {
   if (unauthorized) {
     return (
       <Screen>
-        <div className="max-w-md text-center">
-          <h1 className="text-3xl font-bold">Access restricted</h1>
-          <p className="mt-3 text-lg text-[#7d92b0]">
+        <div className="max-w-lg rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-xs">
+          <h1 className="text-4xl font-bold text-slate-900">Access restricted</h1>
+          <p className="mt-4 text-xl text-slate-600">
             {session.user.email} does not have access to this app.
           </p>
         </div>
@@ -217,14 +219,16 @@ function BoardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0b1526] px-10 py-8 text-white">
-      {/* Minimal Top Bar */}
-      <header className="mb-10 flex items-baseline justify-between border-b border-white/10 pb-5">
+    <div className="min-h-screen bg-slate-50 px-12 py-8 text-slate-900">
+      {/* Top Bar */}
+      <header className="mb-8 flex items-baseline justify-between border-b border-slate-200 pb-5">
         <div className="flex items-baseline gap-4">
-          <h1 className="text-2xl font-semibold tracking-tight">Chicago Downtown REC</h1>
-          <span className="text-base text-[#7d92b0]">Check-in Board</span>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+            Chicago Downtown REC
+          </h1>
+          <span className="text-xl font-medium text-slate-500">Attendance Board</span>
           {hasProblem && (
-            <span className="rounded-full bg-[#d4af37]/15 px-3 py-0.5 text-sm text-[#e7c35a]">
+            <span className="rounded-full border border-amber-300 bg-amber-50 px-4 py-1 text-base font-semibold text-amber-800">
               Reconnecting…
             </span>
           )}
@@ -232,41 +236,46 @@ function BoardPage() {
         <Clock />
       </header>
 
-      <div className="space-y-10">
-        {/* Clean Hero Summary Strip (Doubles as the Legend) */}
-        <section className="rounded-2xl bg-[#122038] p-7">
-          <div className="flex flex-wrap items-end justify-between gap-6">
-            <div>
-              <div className="text-sm font-medium uppercase tracking-widest text-[#7d92b0]">
-                Checked In
+      <div className="space-y-9">
+        {/* Executive Summary Card */}
+        <section className="rounded-2xl border border-slate-200 bg-white px-8 py-6 shadow-xs">
+          <div className="flex flex-wrap items-center justify-between gap-8">
+            <div className="flex items-baseline gap-6">
+              <div>
+                <div className="text-sm font-semibold uppercase tracking-widest text-slate-500">
+                  Checked In
+                </div>
+                <div className="mt-1 flex items-baseline gap-3">
+                  <span className="text-7xl font-bold tabular-nums tracking-tight text-slate-900">
+                    {checkedIn}
+                  </span>
+                  <span className="text-4xl font-medium tabular-nums text-slate-400">
+                    / {total}
+                  </span>
+                </div>
               </div>
-              <div className="mt-1 flex items-baseline gap-3">
-                <span className="text-6xl font-bold tabular-nums tracking-tight">{checkedIn}</span>
-                <span className="text-3xl font-normal tabular-nums text-[#7d92b0]">/ {total}</span>
-              </div>
+              <span className="text-5xl font-bold tabular-nums text-emerald-700">{pct}%</span>
             </div>
 
-            <div className="text-5xl font-bold tabular-nums text-[#d4af37]">{pct}%</div>
+            <div className="flex flex-wrap items-center gap-x-9 gap-y-3">
+              <Stat label="Present" value={present} dot={STATUS_DOT.present} />
+              <Stat label="Tardy" value={tardy} dot={STATUS_DOT.tardy} />
+              <Stat label="Excused" value={excused} dot={STATUS_DOT.excused} />
+              <Stat label="Absent" value={absent} dot={STATUS_DOT.absent} />
+              <Stat label="Not here" value={notYet} dot="border-2 border-slate-400" />
+            </div>
           </div>
 
-          <div className="mt-5 h-2 overflow-hidden rounded-full bg-white/10">
+          <div className="mt-5 h-3 overflow-hidden rounded-full bg-slate-100">
             <div
-              className="h-full rounded-full bg-[#d4af37] transition-all duration-500"
+              className="h-full rounded-full bg-emerald-600 transition-all duration-500"
               style={{ width: `${pct}%` }}
             />
           </div>
-
-          <div className="mt-6 flex flex-wrap items-center gap-x-8 gap-y-3 border-t border-white/10 pt-5">
-            <Stat label="Present" value={present} dot={STATUS_DOT.present} />
-            <Stat label="Tardy" value={tardy} dot={STATUS_DOT.tardy} />
-            <Stat label="Excused" value={excused} dot={STATUS_DOT.excused} />
-            <Stat label="Absent" value={absent} dot={STATUS_DOT.absent} />
-            <Stat label="Not here" value={notYet} dot="border border-[#7d92b0]" />
-          </div>
         </section>
 
-        {/* Borderless Grade Sections */}
-        <section className="grid gap-x-10 gap-y-9 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {/* Grade Cards Grid */}
+        <section className="grid gap-8 lg:grid-cols-2 xl:grid-cols-3">
           {grades.map(({ group, students: list }) => {
             const here = list.filter((s) => {
               const st = byStudent.get(s.id);
@@ -274,15 +283,20 @@ function BoardPage() {
             }).length;
 
             return (
-              <div key={group}>
-                <div className="mb-3.5 flex items-baseline justify-between border-b border-white/10 pb-2">
-                  <h2 className="text-lg font-semibold text-white">{gradeLabel(group)}</h2>
-                  <span className="text-base font-medium tabular-nums text-[#7d92b0]">
-                    <span className="text-white">{here}</span> / {list.length}
+              <div
+                key={group}
+                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs"
+              >
+                <div className="mb-4 flex items-baseline justify-between border-b border-slate-200 pb-3">
+                  <h2 className="text-2xl font-bold tracking-tight text-slate-900">
+                    {gradeLabel(group)}
+                  </h2>
+                  <span className="text-2xl font-semibold tabular-nums text-slate-500">
+                    <span className="font-bold text-slate-900">{here}</span> / {list.length}
                   </span>
                 </div>
 
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2.5">
                   {list.map((s) => {
                     const st = byStudent.get(s.id);
                     const isHere = st === "present" || st === "tardy";
@@ -291,13 +305,13 @@ function BoardPage() {
                     return (
                       <span
                         key={s.id}
-                        className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                        className={`inline-flex items-center gap-2.5 rounded-xl border px-4 py-2 text-xl font-semibold transition-colors ${
                           isHere
-                            ? "bg-[#1a2e4d] text-white"
-                            : "bg-white/[0.03] text-[#6d82a1]"
+                            ? "border-emerald-200 bg-emerald-50/80 text-slate-900"
+                            : "border-slate-200/80 bg-slate-50 text-slate-500"
                         }`}
                       >
-                        {dotColor && <span className={`size-2 rounded-full ${dotColor}`} />}
+                        {dotColor && <span className={`size-3 shrink-0 rounded-full ${dotColor}`} />}
                         {displayName(s.name)}
                       </span>
                     );
