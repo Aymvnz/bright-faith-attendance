@@ -19,21 +19,12 @@ export const Route = createFileRoute("/board")({
 const SHOW_FULL_NAMES = false;
 const TZ = "America/Chicago";
 
-const STATUS_STYLE: Record<string, string> = {
-  present: "bg-[#1f7a52] text-white",
-  tardy: "bg-[#c9a227] text-[#0f1c30]",
-  excused: "bg-[#3b5fa8] text-white",
-  absent: "bg-[#5a2b36] text-[#f0b6c0]",
+const STATUS_DOT: Record<string, string> = {
+  present: "bg-[#2ea36f]",
+  tardy: "bg-[#d4af37]",
+  excused: "bg-[#4f78c7]",
+  absent: "bg-[#b84a5b]",
 };
-const NOT_YET_STYLE = "border border-[#2c4770] text-[#8aa0bd]";
-
-const LEGEND = [
-  { label: "Present", dot: "bg-[#1f7a52]" },
-  { label: "Tardy", dot: "bg-[#c9a227]" },
-  { label: "Excused", dot: "bg-[#3b5fa8]" },
-  { label: "Absent", dot: "bg-[#5a2b36]" },
-  { label: "Not yet here", dot: "border border-[#8aa0bd]" },
-];
 
 function chicagoToday() {
   return new Intl.DateTimeFormat("en-CA", {
@@ -72,20 +63,29 @@ function Clock() {
     return () => clearInterval(id);
   }, []);
   return (
-    <div className="text-right">
-      <div className="text-4xl font-semibold tabular-nums">
-        {now.toLocaleTimeString("en-US", { timeZone: TZ, hour: "numeric", minute: "2-digit" })}
-      </div>
-      <div className="text-lg text-[#9fb0c8]">
-        {now.toLocaleDateString("en-US", { timeZone: TZ, weekday: "long", month: "long", day: "numeric" })}
-      </div>
+    <div className="flex items-baseline gap-4 text-right">
+      <span className="text-lg text-[#7d92b0]">
+        {now.toLocaleDateString("en-US", {
+          timeZone: TZ,
+          weekday: "short",
+          month: "short",
+          day: "numeric",
+        })}
+      </span>
+      <span className="text-3xl font-semibold tabular-nums tracking-tight text-white">
+        {now.toLocaleTimeString("en-US", {
+          timeZone: TZ,
+          hour: "numeric",
+          minute: "2-digit",
+        })}
+      </span>
     </div>
   );
 }
 
 function Screen({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#0f1c30] p-8 text-white">
+    <div className="flex min-h-screen items-center justify-center bg-[#0b1526] p-8 text-white">
       {children}
     </div>
   );
@@ -93,12 +93,10 @@ function Screen({ children }: { children: ReactNode }) {
 
 function Stat({ label, value, dot }: { label: string; value: number; dot: string }) {
   return (
-    <div className="rounded-xl bg-[#16273f] p-4">
-      <div className="flex items-center gap-2 text-base text-[#9fb0c8]">
-        <span className={`inline-block size-3 rounded-full ${dot}`} />
-        {label}
-      </div>
-      <div className="mt-1 text-4xl font-bold tabular-nums">{value}</div>
+    <div className="flex items-center gap-3">
+      <span className={`size-2.5 rounded-full ${dot}`} />
+      <span className="text-sm uppercase tracking-wider text-[#7d92b0]">{label}</span>
+      <span className="text-2xl font-semibold tabular-nums text-white">{value}</span>
     </div>
   );
 }
@@ -108,7 +106,6 @@ function BoardPage() {
   const rosterFn = useServerFn(getRoster);
   const today = chicagoToday();
 
-  // The roster comes from Google Sheets, so it refreshes slowly (every 5 min).
   const rosterQuery = useQuery({
     queryKey: ["board-roster"],
     enabled: !!session,
@@ -117,7 +114,6 @@ function BoardPage() {
     staleTime: 60 * 1000,
   });
 
-  // Attendance comes straight from Supabase, so it refreshes every 5 seconds.
   const attendanceQuery = useQuery({
     queryKey: ["board-attendance", today],
     enabled: !!session,
@@ -125,7 +121,7 @@ function BoardPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("attendance_records")
-        .select("student_id, student_name, status, scanned_at")
+        .select("student_id, status")
         .eq("session_date", today);
       if (error) throw error;
       return data ?? [];
@@ -168,15 +164,11 @@ function BoardPage() {
     else if (status === "excused") excused += 1;
     else if (status === "absent") absent += 1;
   }
+
   const total = students.length;
   const checkedIn = present + tardy;
   const notYet = total - (present + tardy + excused + absent);
   const pct = total ? Math.round((checkedIn / total) * 100) : 0;
-
-  const recent = records
-    .filter((r) => r.status === "present" || r.status === "tardy")
-    .sort((a, b) => new Date(b.scanned_at).getTime() - new Date(a.scanned_at).getTime())
-    .slice(0, 10);
 
   const unauthorized =
     rosterQuery.isError &&
@@ -187,7 +179,7 @@ function BoardPage() {
   if (loading) {
     return (
       <Screen>
-        <p className="text-2xl text-[#9fb0c8]">Loading…</p>
+        <p className="text-xl text-[#7d92b0]">Loading…</p>
       </Screen>
     );
   }
@@ -197,12 +189,12 @@ function BoardPage() {
       <Screen>
         <div className="max-w-md text-center">
           <h1 className="text-3xl font-bold">Sign in required</h1>
-          <p className="mt-3 text-lg text-[#9fb0c8]">
+          <p className="mt-3 text-lg text-[#7d92b0]">
             Sign in on the main page with an approved account, then come back to this page.
           </p>
           <Link
             to="/"
-            className="mt-6 inline-block rounded-lg bg-[#c9a227] px-6 py-3 font-semibold text-[#0f1c30]"
+            className="mt-6 inline-block rounded-lg bg-[#d4af37] px-6 py-3 font-semibold text-[#0b1526]"
           >
             Go to sign in
           </Link>
@@ -216,7 +208,7 @@ function BoardPage() {
       <Screen>
         <div className="max-w-md text-center">
           <h1 className="text-3xl font-bold">Access restricted</h1>
-          <p className="mt-3 text-lg text-[#9fb0c8]">
+          <p className="mt-3 text-lg text-[#7d92b0]">
             {session.user.email} does not have access to this app.
           </p>
         </div>
@@ -225,110 +217,97 @@ function BoardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0f1c30] p-8 text-white">
-      <header className="mb-8 flex items-start justify-between gap-6">
-        <div>
-          <h1 className="text-4xl font-bold">Who&apos;s here</h1>
-          <p className="mt-1 text-lg text-[#9fb0c8]">Chicago Downtown REC</p>
-          {hasProblem && <p className="mt-2 text-base text-[#e7c35a]">Connection problem. Retrying…</p>}
+    <div className="min-h-screen bg-[#0b1526] px-10 py-8 text-white">
+      {/* Minimal Top Bar */}
+      <header className="mb-10 flex items-baseline justify-between border-b border-white/10 pb-5">
+        <div className="flex items-baseline gap-4">
+          <h1 className="text-2xl font-semibold tracking-tight">Chicago Downtown REC</h1>
+          <span className="text-base text-[#7d92b0]">Check-in Board</span>
+          {hasProblem && (
+            <span className="rounded-full bg-[#d4af37]/15 px-3 py-0.5 text-sm text-[#e7c35a]">
+              Reconnecting…
+            </span>
+          )}
         </div>
         <Clock />
       </header>
 
-      <div className="grid gap-8 xl:grid-cols-[1fr_24rem]">
-        <div className="space-y-8">
-          <section className="rounded-2xl bg-[#1e3558] p-8">
-            <div className="flex items-end justify-between gap-6">
-              <div>
-                <div className="text-lg uppercase tracking-wide text-[#9fb0c8]">Checked in</div>
-                <div className="text-8xl font-bold tabular-nums">
-                  {checkedIn}
-                  <span className="text-5xl text-[#9fb0c8]"> / {total}</span>
+      <div className="space-y-10">
+        {/* Clean Hero Summary Strip (Doubles as the Legend) */}
+        <section className="rounded-2xl bg-[#122038] p-7">
+          <div className="flex flex-wrap items-end justify-between gap-6">
+            <div>
+              <div className="text-sm font-medium uppercase tracking-widest text-[#7d92b0]">
+                Checked In
+              </div>
+              <div className="mt-1 flex items-baseline gap-3">
+                <span className="text-6xl font-bold tabular-nums tracking-tight">{checkedIn}</span>
+                <span className="text-3xl font-normal tabular-nums text-[#7d92b0]">/ {total}</span>
+              </div>
+            </div>
+
+            <div className="text-5xl font-bold tabular-nums text-[#d4af37]">{pct}%</div>
+          </div>
+
+          <div className="mt-5 h-2 overflow-hidden rounded-full bg-white/10">
+            <div
+              className="h-full rounded-full bg-[#d4af37] transition-all duration-500"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+
+          <div className="mt-6 flex flex-wrap items-center gap-x-8 gap-y-3 border-t border-white/10 pt-5">
+            <Stat label="Present" value={present} dot={STATUS_DOT.present} />
+            <Stat label="Tardy" value={tardy} dot={STATUS_DOT.tardy} />
+            <Stat label="Excused" value={excused} dot={STATUS_DOT.excused} />
+            <Stat label="Absent" value={absent} dot={STATUS_DOT.absent} />
+            <Stat label="Not here" value={notYet} dot="border border-[#7d92b0]" />
+          </div>
+        </section>
+
+        {/* Borderless Grade Sections */}
+        <section className="grid gap-x-10 gap-y-9 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {grades.map(({ group, students: list }) => {
+            const here = list.filter((s) => {
+              const st = byStudent.get(s.id);
+              return st === "present" || st === "tardy";
+            }).length;
+
+            return (
+              <div key={group}>
+                <div className="mb-3.5 flex items-baseline justify-between border-b border-white/10 pb-2">
+                  <h2 className="text-lg font-semibold text-white">{gradeLabel(group)}</h2>
+                  <span className="text-base font-medium tabular-nums text-[#7d92b0]">
+                    <span className="text-white">{here}</span> / {list.length}
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {list.map((s) => {
+                    const st = byStudent.get(s.id);
+                    const isHere = st === "present" || st === "tardy";
+                    const dotColor = st ? STATUS_DOT[st] : null;
+
+                    return (
+                      <span
+                        key={s.id}
+                        className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                          isHere
+                            ? "bg-[#1a2e4d] text-white"
+                            : "bg-white/[0.03] text-[#6d82a1]"
+                        }`}
+                      >
+                        {dotColor && <span className={`size-2 rounded-full ${dotColor}`} />}
+                        {displayName(s.name)}
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
-              <div className="text-6xl font-bold tabular-nums text-[#c9a227]">{pct}%</div>
-            </div>
-            <div className="mt-6 h-4 overflow-hidden rounded-full bg-[#0f1c30]">
-              <div className="h-full rounded-full bg-[#c9a227]" style={{ width: `${pct}%` }} />
-            </div>
-            <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-5">
-              <Stat label="Present" value={present} dot="bg-[#1f7a52]" />
-              <Stat label="Tardy" value={tardy} dot="bg-[#c9a227]" />
-              <Stat label="Excused" value={excused} dot="bg-[#3b5fa8]" />
-              <Stat label="Absent" value={absent} dot="bg-[#5a2b36]" />
-              <Stat label="Not yet here" value={notYet} dot="border border-[#8aa0bd]" />
-            </div>
-          </section>
-
-          <section className="grid gap-6 md:grid-cols-2 2xl:grid-cols-3">
-            {grades.map(({ group, students: list }) => {
-              const here = list.filter((s) => {
-                const st = byStudent.get(s.id);
-                return st === "present" || st === "tardy";
-              }).length;
-              return (
-                <div key={group} className="rounded-2xl border border-[#2c4770] bg-[#16273f] p-5">
-                  <div className="mb-4 flex items-baseline justify-between">
-                    <h2 className="text-2xl font-semibold">{gradeLabel(group)}</h2>
-                    <span className="text-2xl font-semibold tabular-nums text-[#c9a227]">
-                      {here}
-                      <span className="text-[#9fb0c8]"> / {list.length}</span>
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {list.map((s) => {
-                      const st = byStudent.get(s.id);
-                      const style = st ? (STATUS_STYLE[st] ?? NOT_YET_STYLE) : NOT_YET_STYLE;
-                      return (
-                        <span key={s.id} className={`rounded-full px-3 py-1 text-base font-medium ${style}`}>
-                          {displayName(s.name)}
-                        </span>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
-          </section>
-        </div>
-
-        <aside className="h-fit rounded-2xl border border-[#2c4770] bg-[#16273f] p-6">
-          <h2 className="mb-4 text-2xl font-semibold">Just arrived</h2>
-          {recent.length === 0 ? (
-            <p className="text-lg text-[#9fb0c8]">No one has checked in yet.</p>
-          ) : (
-            <ul className="space-y-3">
-              {recent.map((r) => (
-                <li
-                  key={r.student_id}
-                  className="flex items-center justify-between gap-3 border-b border-[#2c4770] pb-3 last:border-0"
-                >
-                  <div>
-                    <div className="text-xl font-medium">{displayName(r.student_name)}</div>
-                    <div className="text-sm capitalize text-[#9fb0c8]">{r.status}</div>
-                  </div>
-                  <div className="text-lg tabular-nums text-[#9fb0c8]">
-                    {new Date(r.scanned_at).toLocaleTimeString("en-US", {
-                      timeZone: TZ,
-                      hour: "numeric",
-                      minute: "2-digit",
-                    })}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </aside>
+            );
+          })}
+        </section>
       </div>
-
-      <footer className="mt-8 flex flex-wrap gap-6 text-sm text-[#9fb0c8]">
-        {LEGEND.map((item) => (
-          <span key={item.label} className="flex items-center gap-2">
-            <span className={`inline-block size-3 rounded-full ${item.dot}`} />
-            {item.label}
-          </span>
-        ))}
-      </footer>
     </div>
   );
 }
