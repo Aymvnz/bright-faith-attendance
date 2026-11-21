@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 
-import { supabase } from "@/integrations/supabase/client";
-import { getRoster } from "@/lib/roster.functions";
+import { getBoardStats } from "@/lib/roster.functions";
 
 export const Route = createFileRoute("/board")({
   head: () => ({
@@ -21,15 +20,6 @@ const STATUS_DOT: Record<string, string> = {
   excused: "bg-sky-500",
   absent: "bg-rose-500",
 };
-
-function chicagoToday() {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: TZ,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-}
 
 function Clock() {
   const [now, setNow] = useState(() => new Date());
@@ -83,56 +73,26 @@ function MetricCard({
 }
 
 function BoardPage() {
-  const rosterFn = useServerFn(getRoster);
-  const today = chicagoToday();
+  const boardStatsFn = useServerFn(getBoardStats);
 
-  const rosterQuery = useQuery({
-    queryKey: ["board-roster"],
-    queryFn: () => rosterFn({}),
-    refetchInterval: 5 * 60 * 1000,
-    staleTime: 60 * 1000,
-  });
-
-  const attendanceQuery = useQuery({
-    queryKey: ["board-attendance", today],
+  const statsQuery = useQuery({
+    queryKey: ["board-stats"],
+    queryFn: () => boardStatsFn({}),
     refetchInterval: 5000,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("attendance_records")
-        .select("student_id, status")
-        .eq("session_date", today);
-      if (error) throw error;
-      return data ?? [];
-    },
   });
 
-  const students = useMemo(() => rosterQuery.data?.students ?? [], [rosterQuery.data]);
-  const records = useMemo(() => attendanceQuery.data ?? [], [attendanceQuery.data]);
+  const stats = statsQuery.data ?? {
+    present: 0,
+    tardy: 0,
+    excused: 0,
+    absent: 0,
+    notYet: 0,
+    total: 0,
+    checkedIn: 0,
+    pct: 0,
+  };
 
-  const byStudent = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const r of records) map.set(r.student_id, r.status);
-    return map;
-  }, [records]);
-
-  let present = 0;
-  let tardy = 0;
-  let excused = 0;
-  let absent = 0;
-  for (const s of students) {
-    const status = byStudent.get(s.id);
-    if (status === "present") present += 1;
-    else if (status === "tardy") tardy += 1;
-    else if (status === "excused") excused += 1;
-    else if (status === "absent") absent += 1;
-  }
-
-  const total = students.length;
-  const checkedIn = present + tardy;
-  const notYet = total - (present + tardy + excused + absent);
-  const pct = total ? Math.round((checkedIn / total) * 100) : 0;
-
-  const hasProblem = !!rosterQuery.data?.error || rosterQuery.isError || attendanceQuery.isError;
+  const hasProblem = !!stats.error || statsQuery.isError;
 
   return (
     <div className="flex min-h-screen flex-col bg-[#f1f5f9] text-[#142b4d]">
@@ -171,32 +131,32 @@ function BoardPage() {
               </div>
               <div className="mt-2 flex items-baseline gap-4">
                 <span className="text-[7.5rem] font-bold leading-none tabular-nums tracking-tight">
-                  {checkedIn}
+                  {stats.checkedIn}
                 </span>
                 <span className="text-5xl font-medium tabular-nums text-slate-300">
-                  / {total}
+                  / {stats.total}
                 </span>
               </div>
             </div>
 
-            <div className="text-7xl font-bold tabular-nums text-sky-300">{pct}%</div>
+            <div className="text-7xl font-bold tabular-nums text-sky-300">{stats.pct}%</div>
           </div>
 
           <div className="mt-8 h-4 overflow-hidden rounded-full bg-white/15">
             <div
               className="h-full rounded-full bg-sky-300 transition-all duration-500"
-              style={{ width: `${pct}%` }}
+              style={{ width: `${stats.pct}%` }}
             />
           </div>
         </section>
 
         {/* Breakdown Number Cards */}
         <section className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-5">
-          <MetricCard label="Present" value={present} dot={STATUS_DOT.present} />
-          <MetricCard label="Tardy" value={tardy} dot={STATUS_DOT.tardy} />
-          <MetricCard label="Excused" value={excused} dot={STATUS_DOT.excused} />
-          <MetricCard label="Absent" value={absent} dot={STATUS_DOT.absent} />
-          <MetricCard label="Not here" value={notYet} dot="border-2 border-slate-400" />
+          <MetricCard label="Present" value={stats.present} dot={STATUS_DOT.present} />
+          <MetricCard label="Tardy" value={stats.tardy} dot={STATUS_DOT.tardy} />
+          <MetricCard label="Excused" value={stats.excused} dot={STATUS_DOT.excused} />
+          <MetricCard label="Absent" value={stats.absent} dot={STATUS_DOT.absent} />
+          <MetricCard label="Not here" value={stats.notYet} dot="border-2 border-slate-400" />
         </section>
       </main>
     </div>
