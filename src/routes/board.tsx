@@ -163,6 +163,11 @@ function BoardPage() {
     return (
       <Screen>
         <div className="max-w-lg rounded-2xl border border-slate-200 bg-white p-10 text-center">
+          <img
+            src="/itreb-logo.png"
+            alt="Ismaili Tariqah and Religious Education Board USA"
+            className="mx-auto mb-6 h-14 w-auto object-contain"
+          />
           <h1 className="text-4xl font-bold text-[#142b4d]">Sign in required</h1>
           <p className="mt-4 text-xl text-slate-600">
             Sign in on the main page with an approved account, then come back to this page.
@@ -182,6 +187,11 @@ function BoardPage() {
     return (
       <Screen>
         <div className="max-w-lg rounded-2xl border border-slate-200 bg-white p-10 text-center">
+          <img
+            src="/itreb-logo.png"
+            alt="Ismaili Tariqah and Religious Education Board USA"
+            className="mx-auto mb-6 h-14 w-auto object-contain"
+          />
           <h1 className="text-4xl font-bold text-[#142b4d]">Access restricted</h1>
           <p className="mt-4 text-xl text-slate-600">
             {session.user.email} does not have access to this app.
@@ -194,11 +204,19 @@ function BoardPage() {
   return (
     <div className="flex min-h-screen flex-col bg-[#f1f5f9] text-[#142b4d]">
       {/* Top Bar */}
-      <header className="bg-[#142b4d] px-12 py-7 text-white">
-        <div className="mx-auto flex max-w-7xl items-baseline justify-between">
-          <div className="flex items-baseline gap-4">
-            <h1 className="text-3xl font-bold tracking-tight">Chicago Downtown REC</h1>
-            <span className="text-xl font-normal text-slate-300">Attendance</span>
+      <header className="bg-[#142b4d] px-12 py-6 text-white">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-6">
+          <div className="flex items-center gap-6">
+            <img
+              src="/itreb-logo-white.png"
+              alt="Ismaili Tariqah and Religious Education Board USA"
+              className="h-12 w-auto shrink-0 object-contain"
+            />
+            <div className="h-9 w-px bg-white/20" />
+            <div className="flex items-baseline gap-3">
+              <h1 className="text-2xl font-bold tracking-tight">Chicago Downtown REC</h1>
+              <span className="text-lg font-normal text-slate-300">Attendance</span>
+            </div>
             {hasProblem && (
               <span className="rounded-full bg-white/15 px-4 py-1 text-base font-medium text-amber-300">
                 Reconnecting…
