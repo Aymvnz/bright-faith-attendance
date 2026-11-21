@@ -1,11 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import type { ReactNode } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
 import { getRoster } from "@/lib/roster.functions";
 
 export const Route = createFileRoute("/board")({
@@ -60,14 +58,6 @@ function Clock() {
   );
 }
 
-function Screen({ children }: { children: ReactNode }) {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-[#f1f5f9] p-10 text-[#142b4d]">
-      {children}
-    </div>
-  );
-}
-
 function MetricCard({
   label,
   value,
@@ -93,13 +83,11 @@ function MetricCard({
 }
 
 function BoardPage() {
-  const { session, loading } = useAuth();
   const rosterFn = useServerFn(getRoster);
   const today = chicagoToday();
 
   const rosterQuery = useQuery({
     queryKey: ["board-roster"],
-    enabled: !!session,
     queryFn: () => rosterFn({}),
     refetchInterval: 5 * 60 * 1000,
     staleTime: 60 * 1000,
@@ -107,7 +95,6 @@ function BoardPage() {
 
   const attendanceQuery = useQuery({
     queryKey: ["board-attendance", today],
-    enabled: !!session,
     refetchInterval: 5000,
     queryFn: async () => {
       const { data, error } = await supabase
@@ -145,61 +132,7 @@ function BoardPage() {
   const notYet = total - (present + tardy + excused + absent);
   const pct = total ? Math.round((checkedIn / total) * 100) : 0;
 
-  const unauthorized =
-    rosterQuery.isError &&
-    rosterQuery.error instanceof Error &&
-    rosterQuery.error.message.includes("Unauthorized");
   const hasProblem = !!rosterQuery.data?.error || rosterQuery.isError || attendanceQuery.isError;
-
-  if (loading) {
-    return (
-      <Screen>
-        <p className="text-3xl text-slate-500">Loading…</p>
-      </Screen>
-    );
-  }
-
-  if (!session) {
-    return (
-      <Screen>
-        <div className="max-w-lg rounded-2xl border border-slate-200 bg-white p-10 text-center">
-          <img
-            src="/itreb-logo.png"
-            alt="Ismaili Tariqah and Religious Education Board USA"
-            className="mx-auto mb-6 h-14 w-auto object-contain"
-          />
-          <h1 className="text-4xl font-bold text-[#142b4d]">Sign in required</h1>
-          <p className="mt-4 text-xl text-slate-600">
-            Sign in on the main page with an approved account, then come back to this page.
-          </p>
-          <Link
-            to="/"
-            className="mt-8 inline-block rounded-xl bg-[#142b4d] px-8 py-4 text-xl font-semibold text-white hover:bg-[#1c3a66]"
-          >
-            Go to sign in
-          </Link>
-        </div>
-      </Screen>
-    );
-  }
-
-  if (unauthorized) {
-    return (
-      <Screen>
-        <div className="max-w-lg rounded-2xl border border-slate-200 bg-white p-10 text-center">
-          <img
-            src="/itreb-logo.png"
-            alt="Ismaili Tariqah and Religious Education Board USA"
-            className="mx-auto mb-6 h-14 w-auto object-contain"
-          />
-          <h1 className="text-4xl font-bold text-[#142b4d]">Access restricted</h1>
-          <p className="mt-4 text-xl text-slate-600">
-            {session.user.email} does not have access to this app.
-          </p>
-        </div>
-      </Screen>
-    );
-  }
 
   return (
     <div className="flex min-h-screen flex-col bg-[#f1f5f9] text-[#142b4d]">
