@@ -20,10 +20,10 @@ const SHOW_FULL_NAMES = false;
 const TZ = "America/Chicago";
 
 const STATUS_DOT: Record<string, string> = {
-  present: "bg-[#15803d]",
-  tardy: "bg-[#ca8a04]",
-  excused: "bg-[#2563eb]",
-  absent: "bg-[#b91c1c]",
+  present: "bg-emerald-400",
+  tardy: "bg-amber-400",
+  excused: "bg-sky-400",
+  absent: "bg-rose-400",
 };
 
 function chicagoToday() {
@@ -42,20 +42,6 @@ function displayName(name: string) {
   return `${parts[0]} ${parts[parts.length - 1]!.charAt(0)}.`;
 }
 
-function gradeSortKey(label: string): number {
-  const s = label.trim().toLowerCase();
-  if (!s) return 9999;
-  if (s.startsWith("pre-k") || s === "pk" || s.startsWith("pre k")) return -2;
-  if (s === "k" || s.startsWith("kinder")) return -1;
-  const match = s.match(/\d+/);
-  if (match) return Number(match[0]);
-  return 500;
-}
-
-function gradeLabel(group: string) {
-  return /^\d+$/.test(group) ? `Grade ${group}` : group;
-}
-
 function Clock() {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
@@ -64,7 +50,7 @@ function Clock() {
   }, []);
   return (
     <div className="flex items-baseline gap-5 text-right">
-      <span className="text-xl font-medium text-slate-500">
+      <span className="text-xl font-medium text-slate-300">
         {now.toLocaleDateString("en-US", {
           timeZone: TZ,
           weekday: "short",
@@ -72,7 +58,7 @@ function Clock() {
           day: "numeric",
         })}
       </span>
-      <span className="text-4xl font-bold tabular-nums tracking-tight text-slate-900">
+      <span className="text-4xl font-bold tabular-nums tracking-tight text-white">
         {now.toLocaleTimeString("en-US", {
           timeZone: TZ,
           hour: "numeric",
@@ -85,7 +71,7 @@ function Clock() {
 
 function Screen({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 p-10 text-slate-900">
+    <div className="flex min-h-screen items-center justify-center bg-[#f1f5f9] p-10 text-[#142b4d]">
       {children}
     </div>
   );
@@ -95,10 +81,10 @@ function Stat({ label, value, dot }: { label: string; value: number; dot: string
   return (
     <div className="flex items-center gap-3">
       <span className={`size-3 shrink-0 rounded-full ${dot}`} />
-      <span className="text-base font-semibold uppercase tracking-wider text-slate-500">
+      <span className="text-base font-medium uppercase tracking-wider text-slate-300">
         {label}
       </span>
-      <span className="text-3xl font-bold tabular-nums text-slate-900">{value}</span>
+      <span className="text-3xl font-bold tabular-nums text-white">{value}</span>
     </div>
   );
 }
@@ -130,7 +116,11 @@ function BoardPage() {
     },
   });
 
-  const students = useMemo(() => rosterQuery.data?.students ?? [], [rosterQuery.data]);
+  const students = useMemo(() => {
+    const list = rosterQuery.data?.students ?? [];
+    return [...list].sort((a, b) => a.name.localeCompare(b.name));
+  }, [rosterQuery.data]);
+
   const records = useMemo(() => attendanceQuery.data ?? [], [attendanceQuery.data]);
 
   const byStudent = useMemo(() => {
@@ -138,22 +128,6 @@ function BoardPage() {
     for (const r of records) map.set(r.student_id, r.status);
     return map;
   }, [records]);
-
-  const grades = useMemo(() => {
-    const map = new Map<string, typeof students>();
-    for (const s of students) {
-      const key = s.group?.trim() || "Ungrouped";
-      const list = map.get(key) ?? [];
-      list.push(s);
-      map.set(key, list);
-    }
-    return [...map.entries()]
-      .map(([group, list]) => ({
-        group,
-        students: [...list].sort((a, b) => a.name.localeCompare(b.name)),
-      }))
-      .sort((a, b) => gradeSortKey(a.group) - gradeSortKey(b.group) || a.group.localeCompare(b.group));
-  }, [students]);
 
   let present = 0;
   let tardy = 0;
@@ -189,14 +163,14 @@ function BoardPage() {
   if (!session) {
     return (
       <Screen>
-        <div className="max-w-lg rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-xs">
-          <h1 className="text-4xl font-bold text-slate-900">Sign in required</h1>
+        <div className="max-w-lg rounded-2xl border border-slate-200 bg-white p-10 text-center">
+          <h1 className="text-4xl font-bold text-[#142b4d]">Sign in required</h1>
           <p className="mt-4 text-xl text-slate-600">
             Sign in on the main page with an approved account, then come back to this page.
           </p>
           <Link
             to="/"
-            className="mt-8 inline-block rounded-xl bg-slate-900 px-8 py-4 text-xl font-semibold text-white hover:bg-slate-800"
+            className="mt-8 inline-block rounded-xl bg-[#142b4d] px-8 py-4 text-xl font-semibold text-white hover:bg-[#1c3a66]"
           >
             Go to sign in
           </Link>
@@ -208,8 +182,8 @@ function BoardPage() {
   if (unauthorized) {
     return (
       <Screen>
-        <div className="max-w-lg rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-xs">
-          <h1 className="text-4xl font-bold text-slate-900">Access restricted</h1>
+        <div className="max-w-lg rounded-2xl border border-slate-200 bg-white p-10 text-center">
+          <h1 className="text-4xl font-bold text-[#142b4d]">Access restricted</h1>
           <p className="mt-4 text-xl text-slate-600">
             {session.user.email} does not have access to this app.
           </p>
@@ -219,109 +193,78 @@ function BoardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 px-12 py-8 text-slate-900">
-      {/* Top Bar */}
-      <header className="mb-8 flex items-baseline justify-between border-b border-slate-200 pb-5">
-        <div className="flex items-baseline gap-4">
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-            Chicago Downtown REC
-          </h1>
-          <span className="text-xl font-medium text-slate-500">Attendance Board</span>
-          {hasProblem && (
-            <span className="rounded-full border border-amber-300 bg-amber-50 px-4 py-1 text-base font-semibold text-amber-800">
-              Reconnecting…
-            </span>
-          )}
+    <div className="min-h-screen bg-[#f1f5f9] text-[#142b4d]">
+      {/* Deep Navy Header Band */}
+      <div className="bg-[#142b4d] px-12 pb-10 pt-8 text-white">
+        <header className="mb-8 flex items-baseline justify-between border-b border-white/15 pb-5">
+          <div className="flex items-baseline gap-4">
+            <h1 className="text-3xl font-bold tracking-tight">Chicago Downtown REC</h1>
+            <span className="text-xl font-normal text-slate-300">Attendance</span>
+            {hasProblem && (
+              <span className="rounded-full bg-white/15 px-4 py-1 text-base font-medium text-amber-300">
+                Reconnecting…
+              </span>
+            )}
+          </div>
+          <Clock />
+        </header>
+
+        {/* Minimalist Summary Row */}
+        <div className="flex flex-wrap items-center justify-between gap-8">
+          <div className="flex items-baseline gap-6">
+            <div className="flex items-baseline gap-3">
+              <span className="text-7xl font-bold tabular-nums tracking-tight text-white">
+                {checkedIn}
+              </span>
+              <span className="text-4xl font-normal tabular-nums text-slate-300">
+                / {total}
+              </span>
+            </div>
+            <span className="text-5xl font-bold tabular-nums text-sky-300">{pct}%</span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-x-9 gap-y-3">
+            <Stat label="Present" value={present} dot={STATUS_DOT.present} />
+            <Stat label="Tardy" value={tardy} dot={STATUS_DOT.tardy} />
+            <Stat label="Excused" value={excused} dot={STATUS_DOT.excused} />
+            <Stat label="Absent" value={absent} dot={STATUS_DOT.absent} />
+            <Stat label="Not here" value={notYet} dot="border-2 border-slate-400" />
+          </div>
         </div>
-        <Clock />
-      </header>
 
-      <div className="space-y-9">
-        {/* Executive Summary Card */}
-        <section className="rounded-2xl border border-slate-200 bg-white px-8 py-6 shadow-xs">
-          <div className="flex flex-wrap items-center justify-between gap-8">
-            <div className="flex items-baseline gap-6">
-              <div>
-                <div className="text-sm font-semibold uppercase tracking-widest text-slate-500">
-                  Checked In
-                </div>
-                <div className="mt-1 flex items-baseline gap-3">
-                  <span className="text-7xl font-bold tabular-nums tracking-tight text-slate-900">
-                    {checkedIn}
-                  </span>
-                  <span className="text-4xl font-medium tabular-nums text-slate-400">
-                    / {total}
-                  </span>
-                </div>
-              </div>
-              <span className="text-5xl font-bold tabular-nums text-emerald-700">{pct}%</span>
-            </div>
+        <div className="mt-6 h-2.5 overflow-hidden rounded-full bg-white/15">
+          <div
+            className="h-full rounded-full bg-sky-300 transition-all duration-500"
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      </div>
 
-            <div className="flex flex-wrap items-center gap-x-9 gap-y-3">
-              <Stat label="Present" value={present} dot={STATUS_DOT.present} />
-              <Stat label="Tardy" value={tardy} dot={STATUS_DOT.tardy} />
-              <Stat label="Excused" value={excused} dot={STATUS_DOT.excused} />
-              <Stat label="Absent" value={absent} dot={STATUS_DOT.absent} />
-              <Stat label="Not here" value={notYet} dot="border-2 border-slate-400" />
-            </div>
-          </div>
-
-          <div className="mt-5 h-3 overflow-hidden rounded-full bg-slate-100">
-            <div
-              className="h-full rounded-full bg-emerald-600 transition-all duration-500"
-              style={{ width: `${pct}%` }}
-            />
-          </div>
-        </section>
-
-        {/* Grade Cards Grid */}
-        <section className="grid gap-8 lg:grid-cols-2 xl:grid-cols-3">
-          {grades.map(({ group, students: list }) => {
-            const here = list.filter((s) => {
-              const st = byStudent.get(s.id);
-              return st === "present" || st === "tardy";
-            }).length;
+      {/* Clean Single-Roster Canvas */}
+      <main className="px-12 py-10">
+        <div className="flex flex-wrap gap-3">
+          {students.map((s) => {
+            const st = byStudent.get(s.id);
+            const isHere = st === "present" || st === "tardy";
 
             return (
-              <div
-                key={group}
-                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs"
+              <span
+                key={s.id}
+                className={`inline-flex items-center gap-2.5 rounded-xl px-5 py-2.5 text-xl font-semibold transition-colors ${
+                  isHere
+                    ? "bg-[#142b4d] text-white"
+                    : "bg-white text-slate-500 ring-1 ring-slate-200/80"
+                }`}
               >
-                <div className="mb-4 flex items-baseline justify-between border-b border-slate-200 pb-3">
-                  <h2 className="text-2xl font-bold tracking-tight text-slate-900">
-                    {gradeLabel(group)}
-                  </h2>
-                  <span className="text-2xl font-semibold tabular-nums text-slate-500">
-                    <span className="font-bold text-slate-900">{here}</span> / {list.length}
-                  </span>
-                </div>
-
-                <div className="flex flex-wrap gap-2.5">
-                  {list.map((s) => {
-                    const st = byStudent.get(s.id);
-                    const isHere = st === "present" || st === "tardy";
-                    const dotColor = st ? STATUS_DOT[st] : null;
-
-                    return (
-                      <span
-                        key={s.id}
-                        className={`inline-flex items-center gap-2.5 rounded-xl border px-4 py-2 text-xl font-semibold transition-colors ${
-                          isHere
-                            ? "border-emerald-200 bg-emerald-50/80 text-slate-900"
-                            : "border-slate-200/80 bg-slate-50 text-slate-500"
-                        }`}
-                      >
-                        {dotColor && <span className={`size-3 shrink-0 rounded-full ${dotColor}`} />}
-                        {displayName(s.name)}
-                      </span>
-                    );
-                  })}
-                </div>
-              </div>
+                {st && st !== "present" && (
+                  <span className={`size-2.5 shrink-0 rounded-full ${STATUS_DOT[st]}`} />
+                )}
+                {displayName(s.name)}
+              </span>
             );
           })}
-        </section>
-      </div>
+        </div>
+      </main>
     </div>
   );
 }
